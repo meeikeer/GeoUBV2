@@ -40,3 +40,15 @@ Desktop.ini
 *.tmp
 *.temp
 temp-repo/
+
+# Local backups
+*.backup
+mapdata.backup.json
+
+# GitHub Pages (Jekyll defaults)
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+/vendor
+Gemfile.lock
