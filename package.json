@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "npm run dev --prefix client",
-    "build": "npm run build --prefix client",
+    "build": "npm run build --prefix client && node scripts/publish-docs.mjs",
+    "build:only": "npm run build --prefix client",
     "preview": "npm run preview --prefix client",
     "lint": "npm run lint --prefix client"
   }
