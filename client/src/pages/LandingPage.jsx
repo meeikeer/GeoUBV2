@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoginPanel from '../components/map/LoginPanel.jsx'
 import AssetIcon from '../components/icons/AssetIcon.jsx'
+import ProblemSection from '../components/landing/ProblemSection.jsx'
 import { login } from '../services/auth.js'
 
 const DIRECTORY = [
@@ -33,13 +34,13 @@ const CAPABILITIES = [
   },
   {
     icon: 'restart',
-    title: 'Mapa sin conexión',
-    text: 'El plano y los datos se cachean con la PWA: funciona en sótanos y zonas sin cobertura.'
+    title: 'Funciona sin internet',
+    text: 'El mapa y la información quedan guardados en el teléfono. Se abre y calcula la ruta aunque no haya señal, por ejemplo en sótanos y garajes.'
   },
   {
     icon: 'list',
-    title: 'Edición abierta',
-    text: 'Con un token de GitHub el personal actualiza el directorio sin tocar código ni redesplegar.'
+    title: 'El personal puede actualizarlo',
+    text: 'Quien esté autorizado agrega o corrige un salón directamente en la página. No hace falta modificar nada en el sistema.'
   }
 ]
 
@@ -188,7 +189,10 @@ function LandingPage() {
             <div className="leading-none">
               <div className="font-display text-[17px] font-bold tracking-tight text-white">GeoUBV</div>
               <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.24em] text-slate-500">
-                Mapa del campus
+                <span className="sm:hidden">Mapa digital interactivo · UBV</span>
+                <span className="hidden sm:inline">
+                  Mapa digital interactivo de la Universidad Bolivariana de Venezuela
+                </span>
               </div>
             </div>
           </a>
@@ -225,21 +229,21 @@ function LandingPage() {
             <div className="animate-fade-rise">
               <div className="chip chamfer chamfer-sm border-brand-400/25 text-brand-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-brand-400 animate-breathe" />
-                Cartografía del campus
+                Cartografía institucional
               </div>
 
               <h1 className="mt-6 font-display text-[2.1rem] font-extrabold leading-[1.08] text-white sm:text-5xl lg:text-[3.4rem]">
-                Deja de preguntar
+                La UBV,
                 <br />
                 <span className="relative inline-block text-brand-400">
-                  dónde queda eso
+                  ubicada
                   <span className="absolute -bottom-1 left-0 h-[3px] w-full bg-brand-500/40" aria-hidden="true" />
                 </span>
               </h1>
 
               <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-slate-400 sm:text-base">
-                GeoUBV dibuja cada piso del edificio y calcula el camino más corto entre
-                aula, laboratorio o biblioteca. Funciona también sin internet.
+                GeoUBV dibuja cada piso de la institución y calcula el camino más corto entre
+                un aula, un laboratorio o la biblioteca. Y también funciona cuando no hay internet.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -279,6 +283,9 @@ function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* ── Problema ────────────────────────────────────── */}
+        <ProblemSection />
 
         {/* ── Directorio ───────────────────────────────────── */}
         <section className="border-y border-white/[0.06] bg-ink-900/40">
