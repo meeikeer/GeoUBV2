@@ -49,11 +49,9 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 - Cada `PUT` genera un commit. El admin edita por interfaz, nunca el JSON a mano.
 - `mapdata.json` se genera **antes del deploy**, no en runtime.
 
-## Configuración pendiente
-- `client/src/services/github.js` tiene `REPO_OWNER = 'TU_GITHUB_USERNAME'` y
-  `REPO_NAME = 'TU_REPO_NAME'` sin configurar. Mientras no se rellenen, la API
-  da 404 y el admin no puede leer ni escribir. El visitante no lo nota: sus
-  datos salen del bundle.
+## Config
+- `client/src/services/github.js` apunta a `meeikeer/GeoUBV2`. Si el repo se
+  clona o se renombra, hay que actualizar `REPO_OWNER` y `REPO_NAME`.
 
 ## Modelo de datos
 - `sede`: id_sede, nom_sede
