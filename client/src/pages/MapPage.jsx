@@ -7,7 +7,8 @@ import { useRouteManager } from '../hooks/useRouteManager.js'
 import { usePanZoom } from '../hooks/usePanZoom.js'
 import { useToast } from '../hooks/useToast.js'
 import { crud } from '../services/crud.js'
-import { isAuthenticated, clearToken } from '../services/auth.js'
+import { isAuthenticated, clearToken, getToken } from '../services/auth.js'
+import { validateToken } from '../services/github.js'
 import TopBar from '../components/map/TopBar.jsx'
 import BottomToolbar from '../components/map/BottomToolbar.jsx'
 import MapStage from '../components/map/MapStage.jsx'
@@ -222,6 +223,24 @@ export default function MapPage() {
   }, [rm.currentRoute, panZoom])
 
   /* ---------------- modo admin ---------------- */
+
+  /* El token puede haber caducado desde que se guardó: isAuthenticated() solo
+     mira que exista la clave. Sin esto se enseñaría la UI de admin y toda
+     escritura fallaría después con un 401. */
+  useEffect(() => {
+    if (!isAdmin) return
+    let cancelled = false
+    validateToken(getToken()).then(user => {
+      if (cancelled) return
+      if (!user) {
+        clearToken()
+        setIsAdmin(false)
+        setAddingMode(false)
+        setListOpen(false)
+      }
+    })
+    return () => { cancelled = true }
+  }, [isAdmin])
 
   const handleLogout = useCallback(() => {
     clearToken()
@@ -472,6 +491,8 @@ export default function MapPage() {
         habitaciones={locationData}
         pisos={data.pisos}
         categorias={data.categorias}
+        sedes={data.sedes}
+        edificios={data.edificios}
         onEdit={handleEdit}
         onDelete={handleDelete}
         loading={locationLoading}

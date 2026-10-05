@@ -35,6 +35,8 @@ function nextId(collection, idField) {
 }
 
 export const crud = {
+  readCollection,
+
   async getAll() {
     const [sedes, edificios, pisos, habitaciones, categorias] = await Promise.all([
       readCollection('sede'),

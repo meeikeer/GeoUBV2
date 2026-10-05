@@ -41,6 +41,7 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 ## Auth (PAT GitHub)
 - Validación: `GET https://api.github.com/user` con token. Permiso PAT requerido: `repo`.
 - Almacenamiento: `localStorage` key `geoubv_admin_token` → activa modo admin. Token inválido → error.
+- `MapPage` revalida el token al montar: si caducó, limpia la sesión y oculta la UI admin.
 
 ## CRUD GitHub Contents
 - Lectura: `GET /repos/{owner}/{repo}/contents/geodata/{archivo}.json` → `{content: "<base64>", sha}` → `atob(content)` + `JSON.parse()`.
@@ -48,6 +49,23 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 - El `sha` obliga a leer justo antes de escribir: si el archivo cambió, GitHub rechaza el `PUT`.
 - Cada `PUT` genera un commit. El admin edita por interfaz, nunca el JSON a mano.
 - `mapdata.json` se genera **antes del deploy**, no en runtime.
+
+## Escritura y refresco
+- `crud.readCollection` es API pública: la usan `AdminPanel` (pestañas pisos,
+  edificios, categorías) y `MapPage` (listado de ubicaciones).
+- Para el admin, `useMapData` lee **primero la API de GitHub** y usa
+  `mapdata.json` como red de seguridad. Motivo: `mapdata.json` es estático y no
+  refleja el `PUT` recién hecho, así que refrescar solo desde el bundle
+  revertiría en pantalla lo recién escrito.
+- El visitante no cambia: nunca toca la API.
+
+## Despliegue
+- `client/dist/`, vía `.github/workflows/deploy-pages.yml` (push a `main`).
+- El commit que genera cada `PUT` del admin dispara ese workflow, que
+  regenera `mapdata.json` y redespliega. Ese es el ciclo que lleva un cambio
+  del admin hasta los visitantes, sin paso manual.
+- Settings → Pages → Source: **GitHub Actions**.
+- `npm run lint` vive en la raíz y delega en `client/`.
 
 ## Config
 - `client/src/services/github.js` apunta a `meeikeer/GeoUBV2`. Si el repo se

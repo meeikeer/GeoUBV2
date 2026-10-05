@@ -86,10 +86,15 @@ Las coordenadas van normalizadas de 0 a 1. El catálogo tiene 13 categorías: Au
 El admin edita por interfaz, nunca el JSON a mano: cada cambio genera un commit en `geodata/*.json` a través de la Contents API.
 
 - Autenticación: `GET https://api.github.com/user` con un Personal Access Token de alcance `repo`.
-- Sesión: `localStorage`, clave `geoubv_admin_token`.
+- Sesión: `localStorage`, clave `geoubv_admin_token`. Al entrar al mapa se revalida el token: si caducó, se cierra la sesión sola.
 - Escritura: `PUT /repos/meeikeer/GeoUBV2/contents/geodata/{archivo}.json`, leyendo el `sha` justo antes de escribir. Si el archivo cambió, GitHub rechaza el `PUT`.
+- Tras guardar, el admin refresca los datos desde la API, no desde `mapdata.json`: el bundle es estático y no refleja el `PUT` recién hecho.
 
 El PAT nunca se escribe en el código: lo introduce el admin en el panel de login.
+
+Para crear una ubicación: botón **Agregar** → toca el plano → *Agregar aquí* → nombre, categoría y piso → *Crear ubicación*. Para editarla o borrarla: botón **Lista** → pestaña **Habitaciones**. El panel también gestiona pisos, edificios y categorías.
+
+Crear un piso exige su `url_map` (la ruta del PNG). Un PNG nuevo hay que subirlo a `client/public/assets/maps/` y redesplegar: el admin no puede subirlo desde la interfaz.
 
 ## Mapas y pathfinding
 
@@ -97,8 +102,10 @@ Los PNG de `client/public/assets/maps/` son la fuente visual. `client/src/worker
 
 ## Despliegue en GitHub Pages
 
-1. `node scripts/generate-mapdata.mjs` para actualizar el bundle de datos.
-2. `npm run build`.
-3. Publicar `client/dist/`.
+Despliegue automático con GitHub Actions (`.github/workflows/deploy-pages.yml`). Cada `push` a `main` regenera `mapdata.json`, compila `client/dist/` y publica.
+
+Configuración en **Settings → Pages → Build and deployment → Source: GitHub Actions**. También hace falta `Settings → Actions → General → Workflow permissions: Read repository contents and packages permissions`.
+
+El ciclo completo queda así: el admin guarda un cambio → la Contents API crea el commit en `geodata/` → ese commit dispara el workflow → `mapdata.json` se regenera con el cambio y se redespliega. No hay paso manual entre editar y ver el cambio publicado.
 
 El build usa `base: './'` en `client/vite.config.js`, así que las rutas de assets resuelven contra el subpath real del deploy sin dar 404. El Service Worker precachea los PNG de los pisos y cachea `mapdata.json` con estrategia StaleWhileRevalidate: sirve la copia guardada al instante y trae la versión nueva en segundo plano cuando hay red.

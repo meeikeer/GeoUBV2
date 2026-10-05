@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "npm run dev --prefix client",
     "build": "npm run build --prefix client",
-    "preview": "npm run preview --prefix client"
+    "preview": "npm run preview --prefix client",
+    "lint": "npm run lint --prefix client"
   }
 }

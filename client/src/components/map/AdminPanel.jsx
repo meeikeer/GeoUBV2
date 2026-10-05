@@ -63,7 +63,7 @@ function EmptyState({ text }) {
   )
 }
 
-function TabEdificios({ onStatusMsg }) {
+function TabEdificios({ onStatusMsg, sedes }) {
   const [items, setItems] = useState([])
   const [form, setForm] = useState(null)
   const [editId, setEditId] = useState(null)
@@ -84,7 +84,7 @@ function TabEdificios({ onStatusMsg }) {
     setForm('create')
     setEditId(null)
     setNom('')
-    setSedeFk(1)
+    setSedeFk(sedes?.[0]?.id_sede || 1)
   }
 
   const openEdit = (item) => {
@@ -125,6 +125,22 @@ function TabEdificios({ onStatusMsg }) {
           <label className={labelCls}>Nombre</label>
           <input value={nom} onChange={(e) => setNom(e.target.value)} className={inputCls} autoFocus />
         </div>
+        {sedes?.length > 1 && (
+          <div>
+            <label className={labelCls}>Sede</label>
+            <select
+              value={sedeFk}
+              onChange={(e) => setSedeFk(parseInt(e.target.value))}
+              className={inputCls}
+            >
+              {sedes.map((s) => (
+                <option key={s.id_sede} value={s.id_sede}>
+                  {s.nom_sede}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <FormActions onSave={handleSave} onCancel={() => setForm(null)} />
       </FormShell>
     )
@@ -145,13 +161,14 @@ function TabEdificios({ onStatusMsg }) {
   )
 }
 
-function TabPisos({ onStatusMsg }) {
+function TabPisos({ onStatusMsg, edificios }) {
   const [items, setItems] = useState([])
   const [form, setForm] = useState(null)
   const [editId, setEditId] = useState(null)
   const [numPiso, setNumPiso] = useState('')
   const [display, setDisplay] = useState('')
   const [nomPiso, setNomPiso] = useState('')
+  const [urlMap, setUrlMap] = useState('')
   const [edifFk, setEdifFk] = useState(1)
 
   const load = useCallback(async () => {
@@ -170,7 +187,8 @@ function TabPisos({ onStatusMsg }) {
     setNumPiso('')
     setDisplay('')
     setNomPiso('')
-    setEdifFk(1)
+    setUrlMap('')
+    setEdifFk(edificios?.[0]?.id_edificio || 1)
   }
 
   const openEdit = (item) => {
@@ -179,16 +197,24 @@ function TabPisos({ onStatusMsg }) {
     setNumPiso(String(item.num_piso))
     setDisplay(item.display || '')
     setNomPiso(item.nom_piso)
+    setUrlMap(item.url_map || '')
     setEdifFk(item.id_edificio_fk)
   }
 
   const handleSave = async () => {
     if (!nomPiso.trim()) return
+    // Sin url_map el piso nace sin planta: useMapLoader no tiene imagen que
+    // cargar y el piso queda inservible, así que no se deja guardar.
+    if (!urlMap.trim()) {
+      onStatusMsg('Falta la ruta del mapa del piso')
+      return
+    }
     try {
       const body = {
         num_piso: parseInt(numPiso) || 0,
         display: display.trim() || String(parseInt(numPiso) || 0),
         nom_piso: nomPiso.trim(),
+        url_map: urlMap.trim(),
         id_edificio_fk: edifFk
       }
       if (form === 'edit') {
@@ -237,6 +263,35 @@ function TabPisos({ onStatusMsg }) {
           <label className={labelCls}>Nombre</label>
           <input value={nomPiso} onChange={(e) => setNomPiso(e.target.value)} className={inputCls} />
         </div>
+        <div>
+          <label className={labelCls}>Ruta del mapa (PNG)</label>
+          <input
+            value={urlMap}
+            onChange={(e) => setUrlMap(e.target.value)}
+            placeholder="/assets/maps/mapa-piso3.png"
+            className={`${inputCls} font-mono`}
+          />
+          <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
+            Obligatoria. El PNG vive en <code>client/public/assets/maps/</code> y se sirve desde
+            el bundle, así que un archivo nuevo exige redesplegar.
+          </p>
+        </div>
+        {edificios?.length > 1 && (
+          <div>
+            <label className={labelCls}>Edificio</label>
+            <select
+              value={edifFk}
+              onChange={(e) => setEdifFk(parseInt(e.target.value))}
+              className={inputCls}
+            >
+              {edificios.map((b) => (
+                <option key={b.id_edificio} value={b.id_edificio}>
+                  {b.nom_edificio}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <FormActions onSave={handleSave} onCancel={() => setForm(null)} />
       </FormShell>
     )
@@ -267,6 +322,7 @@ function TabCategorias({ onStatusMsg }) {
   const [form, setForm] = useState(null)
   const [editId, setEditId] = useState(null)
   const [nom, setNom] = useState('')
+  const [urlIcono, setUrlIcono] = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -282,18 +338,20 @@ function TabCategorias({ onStatusMsg }) {
     setForm('create')
     setEditId(null)
     setNom('')
+    setUrlIcono('')
   }
 
   const openEdit = (item) => {
     setForm('edit')
     setEditId(item.id_categoria)
     setNom(item.nom_categoria)
+    setUrlIcono(item.url_icono || '')
   }
 
   const handleSave = async () => {
     if (!nom.trim()) return
     try {
-      const body = { nom_categoria: nom.trim() }
+      const body = { nom_categoria: nom.trim(), url_icono: urlIcono.trim() || null }
       if (form === 'edit') {
         await crud.update('categoria', editId, body)
       } else {
@@ -320,6 +378,18 @@ function TabCategorias({ onStatusMsg }) {
         <div>
           <label className={labelCls}>Nombre</label>
           <input value={nom} onChange={(e) => setNom(e.target.value)} className={inputCls} autoFocus />
+        </div>
+        <div>
+          <label className={labelCls}>Icono (SVG)</label>
+          <input
+            value={urlIcono}
+            onChange={(e) => setUrlIcono(e.target.value)}
+            placeholder="/assets/icons/categ-nueva.svg"
+            className={`${inputCls} font-mono`}
+          />
+          <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
+            Opcional. Si se deja vacío, el marcador usa el icono de Aula.
+          </p>
         </div>
         <FormActions onSave={handleSave} onCancel={() => setForm(null)} />
       </FormShell>
@@ -349,7 +419,9 @@ export default function AdminPanel({
   onEdit,
   onDelete,
   loading,
-  categorias
+  categorias,
+  sedes,
+  edificios
 }) {
   const [activeTab, setActiveTab] = useState('habitaciones')
   const [statusMsg, setStatusMsg] = useState('')
@@ -429,8 +501,12 @@ export default function AdminPanel({
         )}
 
         <div className="space-y-4 p-3 sm:p-4">
-          {activeTab === 'edificios' && <TabEdificios onStatusMsg={setStatusMsg} />}
-          {activeTab === 'pisos' && <TabPisos onStatusMsg={setStatusMsg} />}
+          {activeTab === 'edificios' && (
+            <TabEdificios onStatusMsg={setStatusMsg} sedes={sedes} />
+          )}
+          {activeTab === 'pisos' && (
+            <TabPisos onStatusMsg={setStatusMsg} edificios={edificios} />
+          )}
           {activeTab === 'categorias' && <TabCategorias onStatusMsg={setStatusMsg} />}
           {activeTab === 'habitaciones' &&
             (loading ? (

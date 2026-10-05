@@ -7,15 +7,21 @@ import { assetUrl } from '../lib/assets.js'
 const CACHE_KEY = 'geoubv_mapdata'
 const BUNDLE_URL = assetUrl('mapdata.json')
 
-/* Carga de datos del mapa, en cascada y tolerante a fallos:
+/* Carga de datos del mapa, en cascada y tolerante a fallos.
+
+   Para el visitante, el orden es fijo:
 
    1. localStorage    -> instantáneo, sin parpadeo. Puede estar desfasado.
    2. mapdata.json    -> el bundle que viaja con la app. Da el offline de la
                          primera visita y refresca cuando hay red.
-   3. API de GitHub   -> solo si hay token de admin. Nunca es la fuente de
-                         lectura del visitante.
+   3. API de GitHub   -> nunca para el visitante; solo para el admin.
 
-   La prioridad es que el visitante vea el mapa: una fuente que falla se
+   El admin es el caso invertido: al escribir, la fuente de verdad es el repo,
+   porque mapdata.json es un fichero estático del bundle y no refleja un PUT
+   recién hecho. Con token se lee la API primero y el bundle queda como red de
+   seguridad.
+
+   En ambos casos la prioridad es que se vea el mapa: una fuente que falla se
    salta y se pasa a la siguiente. El token decide si se puede *actualizar*,
    nunca si se puede *mostrar*. */
 export function useMapData() {
@@ -44,21 +50,39 @@ export function useMapData() {
     }
   }, [])
 
-  /* Refresco silencioso: nunca enseña un spinner sobre datos que ya están. */
+  /* El admin necesita ver sus escrituras al instante, y mapdata.json es un
+     fichero estático del bundle: no refleja un PUT recién hecho. Para el admin
+     la fuente de verdad es el repo, así que se lee de la API primero y el
+     bundle queda como red de seguridad (token caducado, sin conexión, o justo
+     después de crear un piso que el bundle aún no tiene). El visitante no
+     cambia: nunca toca la API. */
   const refresh = useCallback(async () => {
-    // 1. Bundle local: la fuente principal del visitante
-    try {
+    const readBundle = async () => {
       const res = await fetch(BUNDLE_URL, { cache: 'no-cache' })
       if (!res.ok) throw new Error(`mapdata.json: HTTP ${res.status}`)
       const data = normalizeMapData(await res.json())
-      if (data?.pisos?.length) {
-        save(data, 'bundle')
-        setLoading(false)
-        return
+      if (!data?.pisos?.length) throw new Error('el bundle no trae pisos')
+      return data
+    }
+
+    if (isAuthenticated()) {
+      try {
+        const data = normalizeMapData(await crud.getMapData())
+        if (data?.pisos?.length) {
+          save(data, 'api')
+          setLoading(false)
+          return
+        }
+      } catch {
+        // token caducado o API caída: se intenta el bundle igual
       }
-      throw new Error('el bundle no trae pisos')
+    }
+
+    try {
+      save(await readBundle(), 'bundle')
+      setLoading(false)
     } catch (bundleErr) {
-      // 2. Sin bundle: si hay algo en caché se conserva y se avisa
+      // Sin bundle y sin API: la caché local es lo único que queda
       if (raw) {
         if (!mountedRef.current) return
         setSource('cache')
@@ -68,20 +92,6 @@ export function useMapData() {
       }
       if (!mountedRef.current) return
       setError(bundleErr.message || 'No se pudieron cargar los datos del mapa.')
-
-      // 3. Último recurso: API de GitHub, que requiere token
-      if (isAuthenticated()) {
-        try {
-          const data = normalizeMapData(await crud.getMapData())
-          if (data?.pisos?.length) {
-            save(data, 'api')
-            setLoading(false)
-            return
-          }
-        } catch {
-          // se mantiene el error del bundle
-        }
-      }
       setLoading(false)
     }
   }, [raw, save])
