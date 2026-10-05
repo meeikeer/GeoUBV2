@@ -1,1 +1,7 @@
-[]
+[
+  {
+    "id_edificio": 1,
+    "nom_edificio": "Edificio Principal UBV",
+    "id_sede_fk": 1
+  }
+]

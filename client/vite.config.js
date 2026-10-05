@@ -15,7 +15,19 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'mapdata.json', 'assets/maps/*.png'],
+      // Los PNG van en precache: son inmutables dentro del build y asi estan
+      // disponibles en la primera visita, sin depender de la red.
+      // mapdata.json NO va aqui a proposito: en precache el service worker lo
+      // serviria siempre desde la copia congelada del build y jamas podria
+      // traer los cambios que el admin publique en el repo. Se cachea en
+      // runtime (StaleWhileRevalidate) para que sirva de inmediato y se
+      // actualice en segundo plano cuando haya red.
+      includeAssets: [
+        'favicon.ico',
+        'apple-touch-icon.png',
+        'masked-icon.svg',
+        'assets/maps/*.png'
+      ],
       manifest: {
         id: '/',
         name: 'GeoUBV - Mapa Universitario Interactivo',
@@ -66,6 +78,20 @@ export default defineConfig({
               expiration: {
                 maxEntries: 20,
                 maxAgeSeconds: 60 * 60 * 24 * 30
+              }
+            }
+          },
+          {
+            // Datos del mapa: sirve la copia guardada al instante y pide una
+            // version nueva en segundo plano. Es lo que permite que el
+            // visitante se actualice sin token y sin redesplegar.
+            urlPattern: /mapdata\.json$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'geoubv-mapdata-cache',
+              expiration: {
+                maxEntries: 2,
+                maxAgeSeconds: 60 * 60 * 24 * 7
               }
             }
           }

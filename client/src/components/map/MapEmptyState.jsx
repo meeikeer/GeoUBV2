@@ -12,13 +12,15 @@ export default function MapEmptyState({ message, onRetry }) {
           </svg>
         </span>
         <h2 className="mt-3 font-display text-sm font-bold text-white">
-          {offline ? 'Sin conexión' : 'Sin plantas publicadas'}
+          {message ? 'No se pudieron cargar los datos' : offline ? 'Sin conexión' : 'Sin plantas publicadas'}
         </h2>
         <p className="mt-1.5 text-[12px] leading-relaxed text-slate-400">
+          {/* El mensaje real va primero: si no, el texto genérico tapa el
+              diagnóstico y no se sabe qué falló. */}
           {message ||
             (offline
               ? 'Conéctate a internet para descargar los datos del edificio.'
-              : 'Todavía no hay pisos ni plantas cargados en el repositorio.')}
+              : 'Todavía no hay pisos ni plantas cargados.')}
         </p>
         {onRetry && (
           <button

@@ -1,27 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import AssetIcon from '../icons/AssetIcon.jsx'
-import { login, logout, getToken, isAuthenticated } from '../../services/auth.js'
 
-export function useAdminAuth() {
-  const [token, setToken] = useState(() => getToken())
-
-  const loginWithToken = useCallback(async (pat) => {
-    const user = await login(pat)
-    setToken(pat)
-    return user
-  }, [])
-
-  const logoutUser = useCallback(() => {
-    logout()
-    setToken(null)
-  }, [])
-
-  const getAuthToken = useCallback(() => token, [token])
-  const isAdmin = useCallback(() => isAuthenticated(), [])
-
-  return { token, login: loginWithToken, logout: logoutUser, getToken: getAuthToken, isAdmin }
-}
-
+/* Modal de acceso del admin. El estado de la sesión vive en MapPage (que ya
+   lo tenía) y el token en services/auth.js, así que aquí solo se pide y se
+   entrega al padre. */
 export default function LoginPanel({ isOpen, onClose, onLogin, error, isOffline }) {
   const [tokenInput, setTokenInput] = useState('')
   const [loading, setLoading] = useState(false)

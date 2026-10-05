@@ -1,1 +1,67 @@
-[]
+[
+  {
+    "id_categoria": 1,
+    "nom_categoria": "Aula",
+    "url_icono": "/assets/icons/categ-classroom.svg"
+  },
+  {
+    "id_categoria": 2,
+    "nom_categoria": "Baño Mujeres",
+    "url_icono": "/assets/icons/categ-womans.svg"
+  },
+  {
+    "id_categoria": 3,
+    "nom_categoria": "Baño Hombres",
+    "url_icono": "/assets/icons/categ-mans.svg"
+  },
+  {
+    "id_categoria": 4,
+    "nom_categoria": "Biblioteca",
+    "url_icono": "/assets/icons/categ-library.svg"
+  },
+  {
+    "id_categoria": 5,
+    "nom_categoria": "Cafeteria",
+    "url_icono": "/assets/icons/categ-coffeeshop.svg"
+  },
+  {
+    "id_categoria": 6,
+    "nom_categoria": "Comedor",
+    "url_icono": "/assets/icons/categ-food.svg"
+  },
+  {
+    "id_categoria": 7,
+    "nom_categoria": "Coordinación",
+    "url_icono": "/assets/icons/categ-coordination.svg"
+  },
+  {
+    "id_categoria": 8,
+    "nom_categoria": "Entrada",
+    "url_icono": "/assets/icons/categ-entrance.svg"
+  },
+  {
+    "id_categoria": 9,
+    "nom_categoria": "Escaleras",
+    "url_icono": "/assets/icons/categ-stairs.svg"
+  },
+  {
+    "id_categoria": 10,
+    "nom_categoria": "Gym",
+    "url_icono": "/assets/icons/categ-gym.svg"
+  },
+  {
+    "id_categoria": 11,
+    "nom_categoria": "Laboratorio",
+    "url_icono": "/assets/icons/categ-laboratory.svg"
+  },
+  {
+    "id_categoria": 12,
+    "nom_categoria": "Oficina",
+    "url_icono": "/assets/icons/categ-office.svg"
+  },
+  {
+    "id_categoria": 13,
+    "nom_categoria": "Salud",
+    "url_icono": "/assets/icons/categ-health.svg"
+  }
+]
