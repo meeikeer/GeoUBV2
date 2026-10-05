@@ -1,3 +1,5 @@
+import { assetUrl } from '../../lib/assets.js'
+
 const ICONS = {
   back: '/assets/icons/button-back.svg',
   pin: '/assets/icons/button-ubication.svg',
@@ -27,13 +29,14 @@ const ICONS = {
 }
 
 export default function AssetIcon({ name, src, className = '', style }) {
-  const url = src || ICONS[name]
+  const url = src || (name && ICONS[name])
   if (!url) return null
+  const href = assetUrl(url)
   return (
     <span
       aria-hidden="true"
       className={`mask-icon ${className}`}
-      style={{ ...style, WebkitMaskImage: `url(${url})`, maskImage: `url(${url})` }}
+      style={{ ...style, WebkitMaskImage: `url(${href})`, maskImage: `url(${href})` }}
     />
   )
 }

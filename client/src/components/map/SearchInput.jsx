@@ -1,37 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import AssetIcon from '../icons/AssetIcon.jsx'
-
-const CATEGORY_ICONS = {
-  1: 'aula',
-  2: 'banoMujeres',
-  3: 'banoHombres',
-  4: 'biblioteca',
-  5: 'cafeteria',
-  6: 'comedor',
-  7: 'coordinacion',
-  8: 'entrada',
-  9: 'escaleras',
-  10: 'gym',
-  11: 'laboratorio',
-  12: 'oficina',
-  13: 'salud'
-}
-
-const CATEGORY_NAMES = {
-  1: 'Aula',
-  2: 'Baño Mujeres',
-  3: 'Baño Hombres',
-  4: 'Biblioteca',
-  5: 'Cafetería',
-  6: 'Comedor',
-  7: 'Coordinación',
-  8: 'Entrada',
-  9: 'Escaleras',
-  10: 'Gym',
-  11: 'Laboratorio',
-  12: 'Oficina',
-  13: 'Salud'
-}
+import { categoriaIconName, categoriaNombre } from '../../lib/categorias.js'
 
 export default function SearchInput({ label, placeholder, onSelect, searchFn, value, defaultValue, onChange }) {
   const [query, setQuery] = useState(() => value ?? defaultValue ?? '')
@@ -131,8 +100,8 @@ export default function SearchInput({ label, placeholder, onSelect, searchFn, va
     el?.scrollIntoView({ block: 'nearest' })
   }, [activeIdx])
 
-  const getIcon = (item) => CATEGORY_ICONS[item.categoriaId] || 'aula'
-  const getCategoryName = (item) => CATEGORY_NAMES[item.categoriaId] || ''
+  const getIcon = (item) => categoriaIconName(item.categoriaId)
+  const getCategoryName = (item) => categoriaNombre(item.categoriaId)
 
   return (
     <div ref={wrapperRef} className="w-full">

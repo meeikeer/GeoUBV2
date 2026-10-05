@@ -16,42 +16,8 @@ import AdminToolbar from '../components/map/AdminToolbar.jsx'
 import AdminPanel from '../components/map/AdminPanel.jsx'
 import LocationForm from '../components/map/LocationForm.jsx'
 import AdminOfflineOverlay from '../components/map/AdminOfflineOverlay.jsx'
+import { resolveIcon } from '../lib/categorias.js'
 import './MapPage.css'
-
-const CATEGORY_ICONS_FALLBACK = {
-  Aula: '/assets/icons/categ-classroom.svg',
-  'Baño': '/assets/icons/categ-mans.svg',
-  Coordinación: '/assets/icons/categ-coordination.svg',
-  Escalera: '/assets/icons/categ-stairs.svg',
-  Entrada: '/assets/icons/categ-entrance.svg',
-  Servicio: '/assets/icons/categ-health.svg',
-  PFG: '/assets/icons/categ-classroom.svg',
-  Cafeteria: '/assets/icons/categ-coffeeshop.svg',
-  Biblioteca: '/assets/icons/categ-library.svg',
-  Comedor: '/assets/icons/categ-food.svg',
-  Gym: '/assets/icons/categ-gym.svg',
-  Laboratorio: '/assets/icons/categ-laboratory.svg',
-  Oficina: '/assets/icons/categ-office.svg',
-  Salud: '/assets/icons/categ-health.svg',
-  'Baño Mujeres': '/assets/icons/categ-womans.svg',
-  'Baño Hombres': '/assets/icons/categ-mans.svg'
-}
-
-const CATEGORY_ICON_NAMES = {
-  1: 'aula',
-  2: 'banoMujeres',
-  3: 'banoHombres',
-  4: 'biblioteca',
-  5: 'cafeteria',
-  6: 'comedor',
-  7: 'coordinacion',
-  8: 'entrada',
-  9: 'escaleras',
-  10: 'gym',
-  11: 'laboratorio',
-  12: 'oficina',
-  13: 'salud'
-}
 
 export default function MapPage() {
   const navigate = useNavigate()
@@ -199,15 +165,9 @@ export default function MapPage() {
     return data.allLocations.filter((item) => item.pisoId === currentPisoId)
   }, [data.allLocations, currentPisoId])
 
-  /* Nombre de icono local por id de categoría; url_icono del admin
-     tiene prioridad si existe. El nombre evita depender del dato. */
   const getLocationIcon = useCallback((categoriaId) => {
-    const byId = CATEGORY_ICON_NAMES[categoriaId]
-    if (byId) return { name: byId, src: undefined }
     const categoria = data.getCategoriaById(categoriaId)
-    if (categoria?.url_icono) return { name: 'aula', src: categoria.url_icono }
-    const fallback = categoria?.nom_categoria ? CATEGORY_ICONS_FALLBACK[categoria.nom_categoria] : null
-    return { name: 'aula', src: fallback }
+    return resolveIcon(categoriaId, categoria?.nom_categoria, categoria?.url_icono)
   }, [data])
 
   const showLocationLabels = currentZoom > 1.2

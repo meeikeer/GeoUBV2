@@ -5,6 +5,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
+  // GitHub Pages puede servir el build en un subpath (ej. /GeoUBV_v2/).
+  // Con base relativa, src/lib/assets.js resuelve los '/assets/...' contra el
+  // base real del deploy en lugar de dar 404.
+  base: './',
   plugins: [
     react(),
     tailwindcss(),
