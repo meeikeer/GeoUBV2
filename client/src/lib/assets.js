@@ -4,17 +4,26 @@
 
 const RAW_BASE = import.meta.env.BASE_URL || '/'
 
-export const ASSET_BASE = new URL(RAW_BASE, document.baseURI).href.replace(
-  /([^:])\/*$/,
-  '$1/'
-)
+/* Se resuelve de forma perezosa: tocar document al cargar el módulo lo
+   rompe en cualquier render que no sea de navegador (tests, SSR). */
+let cachedBase = null
+
+export function assetBase() {
+  if (cachedBase) return cachedBase
+  const documentBase =
+    typeof document !== 'undefined' && document.baseURI ? document.baseURI : undefined
+  cachedBase = documentBase
+    ? new URL(RAW_BASE, documentBase).href.replace(/([^:])\/*$/, '$1/')
+    : RAW_BASE
+  return cachedBase
+}
 
 /** Convierte una ruta de asset (absoluta, relativa o URL externa) en una URL usable. */
 export function assetUrl(path) {
   if (!path) return ''
   const value = String(path)
   if (/^(?:https?:)?\/\//i.test(value) || value.startsWith('data:')) return value
-  return ASSET_BASE + value.replace(/^\.?\//, '')
+  return assetBase() + value.replace(/^\.?\//, '')
 }
 
 /* Tamaño natural de los PNG de planta, medido sobre el archivo.

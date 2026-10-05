@@ -1,17 +1,18 @@
 import AssetIcon from '../icons/AssetIcon.jsx'
 
+/*Controles de administracion sobre el plano.
+   Los botones se mantienen en la fila, pero el contenedor se baja para no
+   chocar con el RouteBanner ni con la barra superior. */
 export default function AdminToolbar({ addingMode, onToggleAdd, onOpenList, onLogout }) {
-  const base =
-    'btn chamfer-sm h-9 px-2.5 text-[11px] font-semibold sm:px-3 sm:text-xs'
+  const base = 'btn chamfer-sm h-9 px-2.5 text-[11px] font-semibold sm:px-3 sm:text-xs'
 
   return (
-    <div className="panel-glass chamfer absolute right-3 top-3 z-20 flex items-center gap-1 p-1 shadow-xl shadow-black/50">
+    <div className="panel-glass chamfer absolute left-3 top-3 z-20 flex items-center gap-1 p-1 shadow-xl shadow-black/50">
       <button
+        type="button"
         onClick={onToggleAdd}
         className={`${base} ${
-          addingMode
-            ? 'bg-signal-400 text-ink-950'
-            : 'btn-ghost text-slate-300 hover:text-white'
+          addingMode ? 'bg-signal-400 text-ink-950' : 'btn-ghost text-slate-300 hover:text-white'
         }`}
         aria-label={addingMode ? 'Cancelar colocación' : 'Agregar ubicación'}
         aria-pressed={addingMode}
@@ -27,6 +28,7 @@ export default function AdminToolbar({ addingMode, onToggleAdd, onOpenList, onLo
       </button>
 
       <button
+        type="button"
         onClick={onOpenList}
         className={`${base} btn-ghost text-slate-300 hover:text-white`}
         aria-label="Gestionar ubicaciones"
@@ -38,6 +40,7 @@ export default function AdminToolbar({ addingMode, onToggleAdd, onOpenList, onLo
       <span className="mx-0.5 h-5 w-px bg-white/10" aria-hidden="true" />
 
       <button
+        type="button"
         onClick={onLogout}
         className={`${base} btn-danger`}
         aria-label="Cerrar sesión de administrador"

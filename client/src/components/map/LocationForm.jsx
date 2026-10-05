@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import AssetIcon from '../icons/AssetIcon.jsx'
+import Sheet from '../ui/Sheet.jsx'
 
 export default function LocationForm({ isOpen, onClose, onSave, initialData, pisos, currentPiso, categorias }) {
   const [nombre, setNombre] = useState('')
@@ -8,10 +9,12 @@ export default function LocationForm({ isOpen, onClose, onSave, initialData, pis
   const [esConexion, setEsConexion] = useState(false)
   const [nomConexion, setNomConexion] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const isEditing = !!initialData?.id_habitacion
 
   useEffect(() => {
+    setError('')
     if (initialData) {
       setNombre(initialData.nom_codigo || '')
       setCategoriaId(initialData.id_categoria_fk || categorias?.[0]?.id_categoria || 1)
@@ -46,49 +49,41 @@ export default function LocationForm({ isOpen, onClose, onSave, initialData, pis
       }
       await onSave(body, isEditing)
       onClose()
-    } catch {
-      // error handled by parent
+    } catch (err) {
+      setError(err.message || 'No se pudo guardar la ubicación')
     } finally {
       setSaving(false)
     }
   }, [nombre, categoriaId, pisoId, esConexion, nomConexion, initialData, isEditing, onSave, onClose])
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
-      <div
-        className="absolute inset-0 bg-ink-950/80 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      <form
-        onSubmit={handleSubmit}
-        role="dialog"
-        aria-modal="true"
-        aria-label={isEditing ? 'Editar ubicación' : 'Nueva ubicación'}
-        className="panel-glass chamfer-top sm:chamfer scroll-slim relative max-h-[92vh] w-full max-w-md overflow-y-auto shadow-2xl shadow-black/80 animate-sheet-up sm:animate-pop-in"
+    <form onSubmit={handleSubmit} id="location-form">
+      <Sheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title={isEditing ? 'Editar ubicación' : 'Nueva ubicación'}
+        labelledBy="location-form-title"
+        icon={<AssetIcon name={isEditing ? 'edit' : 'pin'} className="h-4 w-4" />}
+        footer={
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              form="location-form"
+              disabled={saving || !nombre.trim()}
+              className="btn btn-primary chamfer-sm flex-1 py-3 text-sm"
+            >
+              {saving ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear ubicación'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-outline chamfer-sm px-5 py-3 text-sm"
+            >
+              Cancelar
+            </button>
+          </div>
+        }
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/[0.07] bg-ink-900/95 px-5 py-3.5 backdrop-blur">
-          <h2 className="flex items-center gap-2.5 font-display text-[15px] font-bold text-white">
-            <span className="chamfer-sm grid h-8 w-8 place-items-center bg-brand-400/12 text-brand-400">
-              <AssetIcon name={isEditing ? 'edit' : 'pin'} className="h-4 w-4" />
-            </span>
-            {isEditing ? 'Editar ubicación' : 'Nueva ubicación'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn-ghost chamfer-sm grid h-9 w-9 place-items-center"
-            aria-label="Cerrar"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
         <div className="space-y-4 px-5 py-5">
           {!isEditing && initialData?.coord_x !== undefined && (
             <div className="chamfer-sm border border-brand-400/25 bg-brand-400/[0.07] px-3 py-2 font-mono text-[11px] text-brand-200">
@@ -170,23 +165,21 @@ export default function LocationForm({ isOpen, onClose, onSave, initialData, pis
                 placeholder="escalera_izquierda_piso_2"
                 className="field chamfer-sm px-3 py-2.5 font-mono text-[13px]"
               />
+              <p className="mt-1.5 text-[11px] leading-relaxed text-slate-500">
+                Debe terminar en el nombre normalizado del piso destino, por ejemplo
+                <span className="font-mono text-slate-400"> _piso_2</span>, para que las rutas
+                entre pisos emparejen la escalera correcta.
+              </p>
             </div>
           )}
 
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={saving || !nombre.trim()}
-              className="btn btn-primary chamfer-sm flex-1 py-3 text-sm"
-            >
-              {saving ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear ubicación'}
-            </button>
-            <button type="button" onClick={onClose} className="btn btn-outline chamfer-sm px-5 py-3 text-sm">
-              Cancelar
-            </button>
-          </div>
+          {error && (
+            <p role="alert" className="chamfer-sm border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-[12px] text-rose-200">
+              {error}
+            </p>
+          )}
         </div>
-      </form>
-    </div>
+      </Sheet>
+    </form>
   )
 }

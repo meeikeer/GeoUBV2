@@ -2,6 +2,10 @@ import { useCallback, useState } from 'react'
 import SearchInput from './SearchInput.jsx'
 import AssetIcon from '../icons/AssetIcon.jsx'
 
+/* La barra superior. La búsqueda se queda siempre visible: antes, al haber ruta
+   activa, el input se sustituía por dos chips y el usuario perdía justo la
+   función que necesita para cambiar de destino. El estado de ruta vive en el
+   RouteBanner, sobre el plano. */
 export default function TopBar({
   onBack,
   currentPiso,
@@ -9,9 +13,7 @@ export default function TopBar({
   searchLocations,
   onSearchResult,
   onRouteClick,
-  originName,
-  destName,
-  routeActive
+  onHelpClick
 }) {
   const [query, setQuery] = useState('')
 
@@ -27,20 +29,11 @@ export default function TopBar({
     [onSearchResult]
   )
 
-  const handleRouteClick = useCallback(() => {
-    if (!query.trim()) {
-      onRouteClick(null)
-      return
-    }
-    const results = searchLocations ? searchLocations(query.trim()) : []
-    const firstMatch = Array.isArray(results) && results.length > 0 ? results[0] : null
-    onRouteClick(firstMatch)
-  }, [query, onRouteClick, searchLocations])
-
   return (
-    <header className="safe-t z-40 flex-shrink-0 border-b border-white/[0.06] bg-ink-950/85 backdrop-blur-xl">
+    <header className="safe-t z-40 flex-none border-b border-white/[0.06] bg-ink-950/85 backdrop-blur-xl">
       <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4">
         <button
+          type="button"
           onClick={onBack}
           className="btn btn-ghost chamfer-sm h-10 w-10 shrink-0 text-slate-400 hover:text-white"
           aria-label="Volver al inicio"
@@ -49,7 +42,10 @@ export default function TopBar({
         </button>
 
         {currentPiso && (
-          <nav className="hidden shrink-0 items-center gap-1.5 lg:flex" aria-label="Ubicación actual">
+          <nav
+            className="hidden shrink-0 items-center gap-1.5 lg:flex"
+            aria-label="Ubicación actual"
+          >
             {breadcrumb.map((part, i) => (
               <span key={i} className="flex items-center gap-1.5">
                 {i > 0 && <span className="text-slate-700">/</span>}
@@ -65,52 +61,39 @@ export default function TopBar({
           </nav>
         )}
 
-        {routeActive ? (
-          <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handleRouteClick}
-              className="chamfer-sm field min-w-0 flex-1 truncate py-2.5 text-left text-[13px]"
-            >
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" aria-hidden="true" />
-                <span className="truncate">{originName || 'Origen'}</span>
-              </span>
-            </button>
-
-            <AssetIcon name="route" className="h-3.5 w-3.5 shrink-0 text-slate-600" />
-
-            <button
-              type="button"
-              onClick={handleRouteClick}
-              className="chamfer-sm field min-w-0 flex-1 truncate py-2.5 text-left text-[13px]"
-            >
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-signal-400" aria-hidden="true" />
-                <span className="truncate">{destName || 'Destino'}</span>
-              </span>
-            </button>
-          </div>
-        ) : (
-          <div className="min-w-0 flex-1">
-            <SearchInput
-              placeholder="Buscar aula, baño, oficina…"
-              onSelect={handleSearchSelect}
-              searchFn={searchLocations}
-              value={query}
-              onChange={setQuery}
-            />
-          </div>
-        )}
+        <div className="min-w-0 flex-1">
+          <SearchInput
+            id="topbar-search"
+            placeholder="Buscar aula, baño, oficina…"
+            onSelect={handleSearchSelect}
+            searchFn={searchLocations}
+            value={query}
+            onChange={setQuery}
+          />
+        </div>
 
         <button
-          onClick={handleRouteClick}
+          type="button"
+          onClick={onHelpClick}
+          className="btn btn-ghost chamfer-sm hidden h-10 w-10 shrink-0 text-slate-400 hover:text-white sm:grid sm:place-items-center"
+          aria-label="Ver la guía de uso"
+          title="Guía de uso"
+        >
+          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9.1 9a3 3 0 1 1 4.2 2.7c-.8.4-1.3 1.1-1.3 2v.3M12 17.5h.01" />
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          onClick={onRouteClick}
           className="btn btn-primary chamfer-sm h-10 shrink-0 px-3 text-[13px] sm:px-4"
-          aria-label="Calcular ruta"
           title="Cómo llegar"
         >
           <AssetIcon name="route" className="h-4 w-4" />
           <span className="hidden sm:inline">Cómo llegar</span>
+          <span className="sr-only sm:hidden">Calcular ruta</span>
         </button>
       </div>
     </header>

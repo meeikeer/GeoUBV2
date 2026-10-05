@@ -1,81 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 
-// MinHeap binario: permite a A* extraer siempre el nodo con menor costo
-// O(log n) en inserción/extracción, O(1) en acceso al mínimo
-function MinHeap() {
-  const data = []
-  const map = new Map()   // key → índice en data, permite actualizar costos O(log n)
-
-  function push(key, score) {
-    data.push({ key, score })
-    const idx = data.length - 1
-    map.set(key, idx)
-    siftUp(idx)
-  }
-
-  // Extrae el elemento con menor score (raíz del heap)
-  function pop() {
-    if (data.length === 0) return null
-    const top = data[0]
-    const last = data.pop()
-    map.delete(top.key)
-    if (data.length > 0) {
-      data[0] = last
-      map.set(last.key, 0)
-      siftDown(0)
-    }
-    return top
-  }
-
-  // Actualiza el score de un nodo existente (A* reabre nodos con mejor ruta)
-  function update(key, score) {
-    const idx = map.get(key)
-    if (idx === undefined) return
-    const old = data[idx].score
-    data[idx].score = score
-    if (score < old) siftUp(idx)
-  }
-
-  function has(key) {
-    return map.has(key)
-  }
-
-  // Sube un nodo hasta restaurar la propiedad del heap (padre ≤ hijos)
-  function siftUp(idx) {
-    while (idx > 0) {
-      const parent = (idx - 1) >> 1
-      if (data[idx].score >= data[parent].score) break
-      swap(idx, parent)
-      idx = parent
-    }
-  }
-
-  // Hunde un nodo hasta restaurar la propiedad del heap (padre ≤ hijos)
-  function siftDown(idx) {
-    const n = data.length
-    while (true) {
-      let smallest = idx
-      const left = idx * 2 + 1
-      const right = idx * 2 + 2
-      if (left < n && data[left].score < data[smallest].score) smallest = left
-      if (right < n && data[right].score < data[smallest].score) smallest = right
-      if (smallest === idx) break
-      swap(idx, smallest)
-      idx = smallest
-    }
-  }
-
-  function swap(i, j) {
-    const tmp = data[i]
-    data[i] = data[j]
-    data[j] = tmp
-    map.set(data[i].key, i)
-    map.set(data[j].key, j)
-  }
-
-  return { push, pop, update, has, get size() { return data.length } }
-}
-
 // Hook principal del mapa: carga la imagen, escanea la grilla, ejecuta A* y dibuja
 // El canvas se superpone al <img> con el mismo tamaño (width/height 100% del contenedor)
 export function useMapLoader() {
@@ -89,7 +13,10 @@ export function useMapLoader() {
   const [grid, setGrid] = useState({ data: null, cols: 0, rows: 0, key: null })    // Grilla para React (solo triggers)
   const [isScanning, setIsScanning] = useState(false)
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [loadError, setLoadError] = useState(null)
+  const [attempt, setAttempt] = useState(0)
   const workerRef = useRef(null)     // Web Worker que escanea el PNG
+  const lastRequestRef = useRef(null)
 
   // Inicializa el Web Worker una sola vez
   useEffect(() => {
@@ -129,9 +56,11 @@ export function useMapLoader() {
   const loadMap = useCallback((url, mapKey) => {
     return new Promise((resolve) => {
       const img = imgRef.current
-      if (!img) { resolve(false); return }
+      if (!img || !url) { resolve(false); return }
 
+      lastRequestRef.current = { url, mapKey }
       setMapLoaded(false)
+      setLoadError(null)
       setIsScanning(true)
 
       const onLoad = () => {
@@ -170,11 +99,26 @@ export function useMapLoader() {
         resolve(true)
       }
 
+      const onError = () => {
+        setIsScanning(false)
+        setMapLoaded(false)
+        setLoadError(url)
+        resolve(false)
+      }
+
       img.onload = onLoad
-      img.onerror = () => resolve(false)
+      img.onerror = onError
       img.src = url
     })
   }, [])
+
+  // Reintenta la última carga fallida sin que el consumidor tenga que saber la URL.
+  const retry = useCallback(() => {
+    const last = lastRequestRef.current
+    if (!last) return
+    setAttempt(prev => prev + 1)
+    return loadMap(last.url, last.mapKey)
+  }, [loadMap])
 
   // A* pathfinding optimizado: usa una grilla 1D tipada y heap plano
   // Conectividad 8-direccional con costo diagonal 1.41 y bloqueo de esquinas
@@ -297,7 +241,6 @@ export function useMapLoader() {
     heap.push(startIndex, startPriority)
 
     const isWall = (idx) => gridData[idx] === 999
-    const walkable = (idx) => idx >= 0 && idx < total && !isWall(idx)
 
     const neighbors = [
       { dx: 1, dy: 0, cost: 1 },
@@ -359,6 +302,21 @@ export function useMapLoader() {
     }
 
     return null
+  }, [])
+
+  /* Escala del plano para convertir la polilínea a metros. Los PNG de planta
+     están a ~0.05 m por píxel (un pasillo de ~10 px mide ~0.5 m), que es lo
+     habitual en planos de obra. */
+  const PX_TO_METERS = 0.05
+  const WALK_METERS_PER_MIN = 75
+
+  const measurePath = useCallback((path) => {
+    let px = 0
+    for (let i = 1; i < path.length; i++) {
+      px += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y)
+    }
+    const meters = Math.round(px * PX_TO_METERS)
+    return { meters, minutes: Math.max(1, Math.round(meters / WALK_METERS_PER_MIN)) }
   }, [])
 
   // Dibuja la ruta en el canvas: recibe coordenadas normalizadas (0-1) del piso
@@ -426,30 +384,50 @@ export function useMapLoader() {
     const xRef = pRef.x * TILE + TILE / 2
     const yRef = pRef.y * TILE + TILE / 2
     const angle = Math.atan2(yDest - yRef, xDest - xRef)
-
-    const INDIGO = '#4338ca'
-
-    // Animate the full path with a moving dashed line + static arrow
     let dashOffset = 0
-    const animate = () => {
+
+    // Trazo en la paleta del proyecto: la ruta es teal (btn-signal), con un
+    // halo oscuro debajo para que se lea tanto sobre el plano blanco como
+    // sobre los rellenos oscuros de la planta.
+    const ROUTE = '#2dd4bf'
+    const HALO = 'rgba(8, 9, 13, 0.55)'
+    const motionOff =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+    const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      ctx.beginPath()
-      ctx.strokeStyle = INDIGO
-      ctx.lineWidth = 6
+      const trace = () => {
+        ctx.beginPath()
+        ctx.moveTo(path[path.length - 1].x * TILE + TILE / 2, path[path.length - 1].y * TILE + TILE / 2)
+        for (let i = path.length - 2; i >= 0; i--) {
+          ctx.lineTo(path[i].x * TILE + TILE / 2, path[i].y * TILE + TILE / 2)
+        }
+        ctx.stroke()
+      }
+
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
-      ctx.setLineDash([14, 10])
-      ctx.lineDashOffset = -dashOffset
-
-      ctx.moveTo(path[path.length - 1].x * TILE + TILE / 2, path[path.length - 1].y * TILE + TILE / 2)
-      for (let i = path.length - 2; i >= 0; i--) {
-        ctx.lineTo(path[i].x * TILE + TILE / 2, path[i].y * TILE + TILE / 2)
-      }
-      ctx.stroke()
-
       ctx.setLineDash([])
-      ctx.fillStyle = INDIGO
+
+      // Halo: mismo trazo más ancho en oscuro, para separar del plano
+      ctx.strokeStyle = HALO
+      ctx.lineWidth = 11
+      trace()
+
+      ctx.strokeStyle = ROUTE
+      ctx.lineWidth = 6
+      if (!motionOff) {
+        ctx.setLineDash([14, 10])
+        ctx.lineDashOffset = -dashOffset
+      }
+      trace()
+      ctx.setLineDash([])
+      ctx.lineDashOffset = 0
+
+      // Punta de flecha en el destino
+      ctx.fillStyle = ROUTE
       ctx.save()
       ctx.translate(xDest, yDest)
       ctx.rotate(angle)
@@ -460,14 +438,22 @@ export function useMapLoader() {
       ctx.closePath()
       ctx.fill()
       ctx.restore()
+    }
 
+    if (motionOff) {
+      draw()
+      return { ok: true, ...measurePath(path) }
+    }
+
+    const animate = () => {
+      draw()
       dashOffset += 0.8
       if (dashOffset > 24) dashOffset = 0
       animRef.current = requestAnimationFrame(animate)
     }
     animate()
-    return true
-  }, [aStar, getCtx])
+    return { ok: true, ...measurePath(path) }
+  }, [aStar, getCtx, measurePath])
 
   // Limpia el canvas (detiene animación y borra el dibujo de la ruta)
   const clearRoute = useCallback(() => {
@@ -492,6 +478,9 @@ export function useMapLoader() {
     grid,
     isScanning,
     mapLoaded,
+    loadError,
+    retry,
+    attempt,
     loadMap,
     drawRoute,
     clearRoute

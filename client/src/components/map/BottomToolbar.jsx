@@ -1,6 +1,9 @@
 import FloorControls from './FloorControls.jsx'
 import AssetIcon from '../icons/AssetIcon.jsx'
 
+/* Barra inferior en flujo (ya no fixed): antes tapaba ~90 px del plano y
+   había que tapar el hueco con un degradado. El zoom vive en MapControls,
+   único juego de controles. */
 export default function BottomToolbar({
   currentPiso,
   canGoUp,
@@ -9,20 +12,12 @@ export default function BottomToolbar({
   goDown,
   sortedPisos,
   onSelectFloor,
-  currentZoom,
-  onZoomIn,
-  onZoomOut,
-  onFit,
   onRouteClick,
   onClearRoute,
-  isScanning,
-  isLoading
+  hasRoute
 }) {
-  const zoomBtn =
-    'btn btn-ghost chamfer-sm h-10 w-10 border border-white/10 text-slate-300 hover:border-brand-400/40 hover:text-brand-300'
-
   return (
-    <div className="safe-b fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-ink-950/88 px-3 pt-2.5 backdrop-blur-xl sm:px-4">
+    <div className="safe-b z-40 flex-none border-t border-white/[0.06] bg-ink-950/88 px-3 pt-2.5 backdrop-blur-xl sm:px-4">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
         <FloorControls
           currentPiso={currentPiso}
@@ -35,19 +30,11 @@ export default function BottomToolbar({
         />
 
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {isScanning && (
-            <span className="chip chamfer-sm scan-line hidden border-brand-400/25 text-brand-300 md:inline-flex">
-              <span className="scan-dot h-1.5 w-1.5 rounded-full bg-brand-400" />
-              Escaneando
-            </span>
-          )}
-          {isLoading && (
-            <span className="hidden font-mono text-[10px] text-slate-500 lg:inline">Cargando…</span>
-          )}
-
           <button
+            type="button"
             onClick={onClearRoute}
-            className="btn btn-ghost chamfer-sm h-10 w-10 border border-white/10 text-slate-400 hover:border-rose-400/40 hover:text-rose-300 sm:w-auto sm:px-3"
+            disabled={!hasRoute}
+            className="btn btn-ghost chamfer-sm h-10 w-10 border border-white/10 text-slate-400 hover:border-rose-400/40 hover:text-rose-300 disabled:border-white/[0.04] disabled:text-slate-700 sm:w-auto sm:px-3"
             aria-label="Limpiar ruta"
             title="Limpiar ruta"
           >
@@ -56,28 +43,14 @@ export default function BottomToolbar({
           </button>
 
           <button
+            type="button"
             onClick={onRouteClick}
             className="btn btn-signal chamfer-sm h-10 px-3 text-[13px] sm:px-4"
-            aria-label="Calcular ruta"
           >
             <AssetIcon name="route" className="h-4 w-4" />
             <span className="hidden sm:inline">Ruta</span>
+            <span className="sr-only sm:hidden">Calcular ruta</span>
           </button>
-
-          <div className="ml-1 hidden items-center gap-1 border-l border-white/[0.07] pl-2 sm:flex">
-            <button onClick={onZoomOut} className={zoomBtn} aria-label="Alejar" title="Alejar">
-              <AssetIcon name="zoomout" className="h-4 w-4" />
-            </button>
-            <span className="w-11 text-center font-mono text-[10px] text-slate-500">
-              {Math.round(currentZoom * 100)}%
-            </span>
-            <button onClick={onZoomIn} className={zoomBtn} aria-label="Acercar" title="Acercar">
-              <AssetIcon name="zoomin" className="h-4 w-4" />
-            </button>
-            <button onClick={onFit} className={zoomBtn} aria-label="Ajustar vista" title="Ajustar vista">
-              <AssetIcon name="restart" className="h-4 w-4" />
-            </button>
-          </div>
         </div>
       </div>
     </div>

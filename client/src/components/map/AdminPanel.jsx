@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import AssetIcon from '../icons/AssetIcon.jsx'
+import Sheet from '../ui/Sheet.jsx'
 import { crud } from '../../services/crud.js'
 
 const TABS = [
@@ -383,37 +384,17 @@ export default function AdminPanel({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div
-        className="absolute inset-0 bg-ink-950/75 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      <aside
-        className="panel-glass chamfer-tl absolute inset-y-0 right-0 flex w-full flex-col border-l border-white/[0.08] shadow-2xl shadow-black/80 animate-slide-in-right"
-        role="dialog"
-        aria-label="Administración de ubicaciones"
-      >
-        <header className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-3.5">
-          <h2 className="flex items-center gap-2.5 font-display text-[15px] font-bold text-white">
-            <span className="chamfer-sm grid h-8 w-8 place-items-center bg-brand-400/12 text-brand-400">
-              <AssetIcon name="list" className="h-4 w-4" />
-            </span>
-            Administración
-          </h2>
-          <button
-            onClick={onClose}
-            className="btn btn-ghost chamfer-sm grid h-9 w-9 place-items-center"
-            aria-label="Cerrar panel"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </header>
-
-        <nav className="flex border-b border-white/[0.07] px-2" role="tablist">
+    <Sheet
+      isOpen={isOpen}
+      onClose={onClose}
+      variant="panel"
+      title="Administración"
+      description="Ubicaciones, pisos y categorías"
+      labelledBy="admin-panel-title"
+      icon={<AssetIcon name="list" className="h-4 w-4" />}
+    >
+      <>
+        <nav className="flex flex-none border-b border-white/[0.07] px-2" role="tablist">
           {TABS.map((tab) => {
             const active = activeTab === tab.key
             return (
@@ -441,13 +422,13 @@ export default function AdminPanel({
         {statusMsg && (
           <div
             role="status"
-            className="border-b border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-[11px] font-medium text-emerald-200"
+            className="flex-none border-b border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-[11px] font-medium text-emerald-200"
           >
             {statusMsg}
           </div>
         )}
 
-        <div className="scroll-slim flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
+        <div className="space-y-4 p-3 sm:p-4">
           {activeTab === 'edificios' && <TabEdificios onStatusMsg={setStatusMsg} />}
           {activeTab === 'pisos' && <TabPisos onStatusMsg={setStatusMsg} />}
           {activeTab === 'categorias' && <TabCategorias onStatusMsg={setStatusMsg} />}
@@ -499,7 +480,7 @@ export default function AdminPanel({
               ))
             ))}
         </div>
-      </aside>
-    </div>
+      </>
+    </Sheet>
   )
 }

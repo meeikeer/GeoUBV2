@@ -1,19 +1,21 @@
 import { useState, useCallback } from 'react'
 
-export default function AdminOfflineOverlay({ onReconnect, onLogout }) {
+export default function AdminOfflineOverlay({ onLogout }) {
   const [checking, setChecking] = useState(false)
 
+  // Comueba GitHub sin esperar al evento 'online': al reconectar el router
+  // puede tardar, y el overlay se queda puesto aunque ya haya red.
   const handleReconnect = useCallback(async () => {
     setChecking(true)
     try {
       const res = await fetch('https://api.github.com', { signal: AbortSignal.timeout(5000) })
-      if (res.ok) onReconnect?.()
+      if (res.ok) window.location.reload()
     } catch {
-      // sigue sin conexión: se mantiene el overlay
+      // sigue sin conexión: el listener 'online' de MapPage lo resolverá
     } finally {
       setChecking(false)
     }
-  }, [onReconnect])
+  }, [])
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-6">
@@ -22,7 +24,8 @@ export default function AdminOfflineOverlay({ onReconnect, onLogout }) {
       <div
         role="alertdialog"
         aria-modal="true"
-        aria-label="Sin conexión a internet"
+        aria-labelledby="admin-offline-title"
+        aria-describedby="admin-offline-desc"
         className="panel-glass chamfer-top sm:chamfer relative w-full max-w-sm px-6 pb-7 pt-8 text-center shadow-2xl shadow-black/80 animate-sheet-up sm:animate-pop-in"
       >
         <span className="animate-breathe mx-auto grid h-14 w-14 place-items-center">
@@ -43,14 +46,17 @@ export default function AdminOfflineOverlay({ onReconnect, onLogout }) {
           </span>
         </span>
 
-        <h2 className="mt-5 font-display text-xl font-bold text-white">Sin conexión</h2>
-        <p className="mx-auto mt-2 max-w-[19rem] text-[13px] leading-relaxed text-slate-400">
+        <h2 id="admin-offline-title" className="mt-5 font-display text-xl font-bold text-white">
+          Sin conexión
+        </h2>
+        <p id="admin-offline-desc" className="mx-auto mt-2 max-w-[19rem] text-[13px] leading-relaxed text-slate-400">
           El modo administrador necesita internet para leer y escribir en GitHub. Reconecta o
           cierra la sesión para seguir como visitante.
         </p>
 
         <div className="mt-6 flex flex-col gap-2">
           <button
+            type="button"
             onClick={handleReconnect}
             disabled={checking}
             className="btn btn-primary chamfer-sm w-full py-3 text-[13px]"
@@ -58,6 +64,7 @@ export default function AdminOfflineOverlay({ onReconnect, onLogout }) {
             {checking ? 'Comprobando…' : 'Reintentar conexión'}
           </button>
           <button
+            type="button"
             onClick={onLogout}
             className="btn btn-outline chamfer-sm w-full py-3 text-[13px]"
           >
