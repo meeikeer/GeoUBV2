@@ -1,0 +1,11 @@
+{
+  "name": "geoubv",
+  "version": "2.0.0",
+  "description": "GeoUBV - Mapa Universitario Interactivo (Solo Frontend + GitHub API)",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix client",
+    "build": "npm run build --prefix client",
+    "preview": "npm run preview --prefix client"
+  }
+}

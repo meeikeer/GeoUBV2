@@ -1,0 +1,587 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@import "tailwindcss";
+
+/* ============================================================
+   GeoUBV · Design tokens
+   Palette: "Grafito" — graphite base + amber wayfinding accent
+   ============================================================ */
+@theme {
+  /* Superficies (azul-graphite, no negro puro) */
+  --color-ink-950: #08090d;
+  --color-ink-900: #0c0e14;
+  --color-ink-850: #11141c;
+  --color-ink-800: #171b25;
+  --color-ink-700: #212734;
+  --color-ink-600: #2f3746;
+
+  /* Acento de marca: ámbar señalización */
+  --color-brand-200: #fde68a;
+  --color-brand-300: #fcd34d;
+  --color-brand-400: #fbbf24;
+  --color-brand-500: #f59e0b;
+  --color-brand-600: #d97706;
+
+  /* Acento secundario: teal señal */
+  --color-signal-300: #5eead4;
+  --color-signal-400: #2dd4bf;
+  --color-signal-500: #14b8a6;
+
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --radius-xs: 6px;
+  --radius-chamfer: 14px;
+}
+
+:root {
+  font-family: var(--font-sans);
+  color-scheme: dark;
+
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.13);
+  --chamfer: 10px;
+}
+
+body {
+  background-color: var(--color-ink-950);
+  color: #e7ebf2;
+  margin: 0;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* ============================================================
+   Texturas y fondos
+   ============================================================ */
+
+/* Rejilla tipo plano arquitectónico — puro CSS, sin coste de imagen */
+.blueprint-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 34px 34px;
+  background-position: center;
+}
+
+.vignette {
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgba(245, 158, 11, 0.09), transparent 60%),
+    radial-gradient(90% 70% at 90% 100%, rgba(45, 212, 191, 0.06), transparent 65%);
+}
+
+/* ============================================================
+   Formas: chaflán (clip-path) — identidad visual del proyecto
+   Auto-contenidas para poder combinarse con variantes (sm:, etc.)
+   ============================================================ */
+@utility chamfer {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 10px) 0,
+    100% 10px,
+    100% 100%,
+    10px 100%,
+    0 calc(100% - 10px)
+  );
+}
+
+@utility chamfer-sm {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 7px) 0,
+    100% 7px,
+    100% 100%,
+    7px 100%,
+    0 calc(100% - 7px)
+  );
+}
+
+@utility chamfer-lg {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 18px) 0,
+    100% 18px,
+    100% 100%,
+    18px 100%,
+    0 calc(100% - 18px)
+  );
+}
+
+/* Solo esquinas superiores — para hojas que suben desde abajo */
+@utility chamfer-top {
+  clip-path: polygon(
+    16px 0,
+    calc(100% - 16px) 0,
+    100% 16px,
+    100% 100%,
+    0 100%,
+    0 16px
+  );
+}
+
+/* Solo esquina superior izquierda */
+@utility chamfer-tl {
+  clip-path: polygon(
+    16px 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 16px
+  );
+}
+
+/* ============================================================
+   Superficies
+   ============================================================ */
+.panel {
+  background-color: var(--color-ink-850);
+  border: 1px solid var(--line);
+}
+
+.panel-glass {
+  background-color: rgba(12, 14, 20, 0.82);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+/* Tarjeta con línea de acento que crece en hover */
+.card {
+  position: relative;
+  background-color: var(--color-ink-850);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.28s ease,
+    background-color 0.28s ease;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--accent, var(--color-brand-400));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-strong);
+  background-color: var(--color-ink-800);
+}
+
+.card:hover::after {
+  transform: scaleX(1);
+}
+
+@media (hover: none) {
+  .card:hover {
+    transform: none;
+  }
+}
+
+/* ============================================================
+   Botones
+   ============================================================ */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-color: currentColor;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
+}
+
+.btn:hover::before {
+  opacity: 0.12;
+  transform: scaleX(1);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.btn:disabled::before {
+  display: none;
+}
+
+/* Primario: relleno ámbar, texto oscuro (contraste alto) */
+.btn-primary {
+  background-image: linear-gradient(135deg, var(--color-brand-400), var(--color-brand-500));
+  color: #1a1206;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset;
+}
+
+.btn-primary:hover::before {
+  background-color: #fff;
+  opacity: 0.16;
+}
+
+/* Señal: teal, para rutas y confirmaciones */
+.btn-signal {
+  background-image: linear-gradient(135deg, var(--color-signal-400), var(--color-signal-500));
+  color: #04201c;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset;
+}
+
+/* Contorno: acción secundaria */
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--line-strong);
+  color: #cbd5e1;
+}
+
+.btn-outline:hover {
+  border-color: rgba(245, 158, 11, 0.55);
+  color: var(--color-brand-300);
+}
+
+/* Sutil: acción terciaria / iconos */
+.btn-ghost {
+  background-color: transparent;
+  color: #94a3b8;
+}
+
+.btn-ghost:hover {
+  color: #f1f5f9;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.btn-danger {
+  background-color: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+.btn-danger:hover {
+  background-color: rgba(248, 113, 113, 0.22);
+  color: #fecaca;
+}
+
+.btn-success {
+  background-color: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.32);
+  color: #6ee7b7;
+}
+
+.btn-success:hover {
+  background-color: rgba(52, 211, 153, 0.22);
+  color: #a7f3d0;
+}
+
+/* ============================================================
+   Formularios
+   ============================================================ */
+.field {
+  width: 100%;
+  background-color: var(--color-ink-900);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line);
+  color: #e7ebf2;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.field::placeholder {
+  color: #5b6577;
+}
+
+.field:hover {
+  border-color: var(--line-strong);
+}
+
+.field:focus {
+  outline: none;
+  background-color: var(--color-ink-850);
+  border-color: rgba(245, 158, 11, 0.6);
+  border-left-color: var(--color-brand-400);
+}
+
+.field-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #7b8798;
+  margin-bottom: 0.375rem;
+}
+
+select.field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%237b8798' stroke-width='1.6'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 11px;
+  padding-right: 2.25rem;
+}
+
+select.field option {
+  background-color: var(--color-ink-850);
+  color: #e7ebf2;
+}
+
+/* ============================================================
+   Foco visible (accesibilidad)
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Chips / etiquetas
+   ============================================================ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--line);
+  background-color: rgba(255, 255, 255, 0.03);
+  color: #b6c0cf;
+}
+
+/* ============================================================
+   Marcadores de mapa — rombo chaflanado (lenguaje señalización)
+   ============================================================ */
+.marker-pin {
+  display: grid;
+  place-items: center;
+  background-image: linear-gradient(150deg, var(--color-ink-700), var(--color-ink-850));
+  border: 1px solid var(--line-strong);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.6),
+    0 0 0 2px rgba(8, 9, 13, 0.55);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.marker-active {
+  border-color: var(--color-brand-400);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.6),
+    0 0 0 2px rgba(8, 9, 13, 0.55),
+    0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+/* Etiqueta flotante del marcador */
+.marker-label {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  background-color: rgba(8, 9, 13, 0.94);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================
+   Animaciones — solo transform / opacity (sin layout thrash)
+   ============================================================ */
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes scan-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.animate-fade-rise { animation: fade-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-in { animation: fade-in 0.25s ease-out both; }
+.animate-pop-in { animation: pop-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-sheet-up { animation: sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-slide-in-right { animation: slide-in-right 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-breathe { animation: breathe 1.8s ease-in-out infinite; }
+
+/* Barrido de escaneo del worker */
+.scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.35), transparent);
+  animation: scan-sweep 1.4s linear infinite;
+}
+
+/* Escalonado para entradas en rejilla */
+.stagger > * {
+  animation: fade-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger > *:nth-child(2) { animation-delay: 0.07s; }
+.stagger > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger > *:nth-child(4) { animation-delay: 0.17s; }
+.stagger > *:nth-child(5) { animation-delay: 0.22s; }
+.stagger > *:nth-child(6) { animation-delay: 0.27s; }
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+.scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.28) transparent;
+}
+
+.scroll-slim::-webkit-scrollbar { width: 6px; height: 6px; }
+.scroll-slim::-webkit-scrollbar-track { background: transparent; }
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 99px;
+}
+.scroll-slim::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* ============================================================
+   Utilidades
+   ============================================================ */
+.safe-b {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.safe-t {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.drag-none {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Icono SVG local tintado con currentColor vía máscara.
+   Los SVG del repo usan fill="currentColor", así que la máscara
+   toma su alfa y el color lo pone el elemento host. */
+.mask-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/* ============================================================
+   Accesibilidad — respetar preferencias de movimiento
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+}

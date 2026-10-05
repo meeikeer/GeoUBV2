@@ -1,0 +1,16 @@
+/* Estilos exclusivos de MapPage.
+   Las animaciones base viven en index.css (fuente única de verdad). */
+
+.map-canvas {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+.map-hint {
+  animation: fade-rise 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Latido del punto de escaneo del worker */
+.scan-dot {
+  animation: breathe 1.4s ease-in-out infinite;
+}

@@ -1,0 +1,378 @@
+import { useRef, useState, useCallback, useEffect } from 'react'
+
+// MinHeap binario: permite a* extraer siempre el nodo con menor costo
+// O(log n) en inserción/extracción, O(1) en acceso al mínimo
+function MinHeap() {
+  const data = []
+  const map = new Map()   // key → índice en data, permite actualizar costos O(log n)
+
+  function push(key, score) {
+    data.push({ key, score })
+    const idx = data.length - 1
+    map.set(key, idx)
+    siftUp(idx)
+  }
+
+  // Extrae el elemento con menor score (raíz del heap)
+  function pop() {
+    if (data.length === 0) return null
+    const top = data[0]
+    const last = data.pop()
+    map.delete(top.key)
+    if (data.length > 0) {
+      data[0] = last
+      map.set(last.key, 0)
+      siftDown(0)
+    }
+    return top
+  }
+
+  // Actualiza el score de un nodo existente (A* reabre nodos con mejor ruta)
+  function update(key, score) {
+    const idx = map.get(key)
+    if (idx === undefined) return
+    const old = data[idx].score
+    data[idx].score = score
+    if (score < old) siftUp(idx)
+  }
+
+  function has(key) {
+    return map.has(key)
+  }
+
+  // Sube un nodo hasta restaurar la propiedad del heap (padre ≤ hijos)
+  function siftUp(idx) {
+    while (idx > 0) {
+      const parent = (idx - 1) >> 1
+      if (data[idx].score >= data[parent].score) break
+      swap(idx, parent)
+      idx = parent
+    }
+  }
+
+  // Hunde un nodo hasta restaurar la propiedad del heap (padre ≤ hijos)
+  function siftDown(idx) {
+    const n = data.length
+    while (true) {
+      let smallest = idx
+      const left = idx * 2 + 1
+      const right = idx * 2 + 2
+      if (left < n && data[left].score < data[smallest].score) smallest = left
+      if (right < n && data[right].score < data[smallest].score) smallest = right
+      if (smallest === idx) break
+      swap(idx, smallest)
+      idx = smallest
+    }
+  }
+
+  function swap(i, j) {
+    const tmp = data[i]
+    data[i] = data[j]
+    data[j] = tmp
+    map.set(data[i].key, i)
+    map.set(data[j].key, j)
+  }
+
+  return { push, pop, update, has, get size() { return data.length } }
+}
+
+// Hook principal del mapa: carga la imagen, escanea la grilla, ejecuta A* y dibuja
+// El canvas se superpone al <img> con el mismo tamaño (width/height 100% del contenedor)
+export function useMapLoader() {
+  const imgRef = useRef(null)        // <img> del mapa
+  const canvasRef = useRef(null)     // <canvas> overlay donde se dibuja la ruta
+  const ctxRef = useRef(null)        // Contexto 2D del canvas (inicialización lazy)
+  const gridRef = useRef([])         // Grilla de costos (ref mutable para A*)
+  const animRef = useRef(null)       // ID del requestAnimationFrame para la animación
+  const [grid, setGrid] = useState([])    // Grilla para React (solo triggers)
+  const [isScanning, setIsScanning] = useState(false)
+  const [mapLoaded, setMapLoaded] = useState(false)
+  const workerRef = useRef(null)     // Web Worker que escanea el PNG
+
+  // Inicializa el Web Worker una sola vez
+  useEffect(() => {
+    workerRef.current = new Worker(
+      new URL('../workers/mapScanner.worker.js', import.meta.url),
+      { type: 'module' }
+    )
+    // Cuando el Worker termina de escanear, actualiza la grilla
+    workerRef.current.onmessage = (e) => {
+      const { grid: newGrid } = e.data
+      gridRef.current = newGrid
+      setGrid(newGrid)
+      setIsScanning(false)
+    }
+    return () => {
+      if (workerRef.current) workerRef.current.terminate()
+    }
+  }, [])
+
+  // Obtiene el contexto 2D del canvas (creación lazy, una sola vez)
+  const getCtx = useCallback(() => {
+    if (!ctxRef.current && canvasRef.current) {
+      ctxRef.current = canvasRef.current.getContext('2d')
+    }
+    return ctxRef.current
+  }, [])
+
+
+
+  // Carga la imagen del piso, redimensiona el canvas y envía los píxeles al Worker
+  // El canvas se dimensiona al tamaño natural del PNG para que la ruta use coords absolutas
+  const loadMap = useCallback((url) => {
+    return new Promise((resolve) => {
+      const img = imgRef.current
+      if (!img) { resolve(false); return }
+
+      setMapLoaded(false)
+      setIsScanning(true)
+
+      const onLoad = () => {
+        const canvas = canvasRef.current
+        if (canvas) {
+          canvas.width = img.naturalWidth || img.width || 800
+          canvas.height = img.naturalHeight || img.height || 600
+        }
+
+        // Dibuja el PNG en un canvas temporal para extraer los píxeles
+        const tempCanvas = document.createElement('canvas')
+        const tempCtx = tempCanvas.getContext('2d')
+        tempCanvas.width = canvas ? canvas.width : 800
+        tempCanvas.height = canvas ? canvas.height : 600
+        tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height)
+
+        const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height)
+
+        if (workerRef.current) {
+          const buffer = imageData.data.buffer
+          // Transfiere el buffer al Worker (ownership transfer, zero-copy)
+          // Usar tileSize:1 para trabajo pixel-por-pixel (más preciso)
+          workerRef.current.postMessage(
+            {
+              data: buffer,
+              width: tempCanvas.width,
+              height: tempCanvas.height,
+              tileSize: 1    // TILE=1: cada tile = 1×1 píxel → mapeo pixel-perfect
+            },
+            [buffer]
+          )
+        } else {
+          setIsScanning(false)
+        }
+
+        setMapLoaded(true)
+        resolve(true)
+      }
+
+      img.onload = onLoad
+      img.onerror = () => resolve(false)
+      img.src = url
+    })
+  }, [])
+
+  // A* pathfinding: busca la ruta de menor costo entre start y end en la grilla
+  // Usa MinHeap para extraer siempre el nodo más prometedor (costo g + heurística h)
+  // Conectividad 8-direccional con costo diagonal 1.41 y chequeo de esquina
+  // TILE=2 → coordenadas de grilla = pixel / 2
+  const aStar = useCallback((start, end) => {
+    const gridData = gridRef.current
+    if (!gridData || gridData.length === 0) return null
+
+    const cols = gridData.length
+    const rows = gridData[0].length
+
+    const key = (p) => `${p.x},${p.y}`       // String único para Map
+    const h = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)   // Distancia euclídea
+
+    const heap = MinHeap()
+    const cameFrom = new Map()   // key anterior → reconstrucción del camino
+    const gScore = new Map()     // key → mejor costo conocido hasta ese nodo
+
+    const skey = key(start)
+    gScore.set(skey, 0)
+    heap.push(skey, h(start, end))   // f = g + h
+
+    const ek = key(end)
+
+    while (heap.size > 0) {
+      const currentKey = heap.pop().key      // Nodo con menor f-score
+      if (currentKey === ek) {
+        // Reconstruye el camino desde el final hasta el inicio
+        const path = [end]
+        let ck = currentKey
+        while (cameFrom.has(ck)) {
+          ck = cameFrom.get(ck)
+          const parts = ck.split(',')
+          path.push({ x: parseInt(parts[0]), y: parseInt(parts[1]) })
+        }
+        return path
+      }
+
+      const curParts = currentKey.split(',')
+      const cx = parseInt(curParts[0])
+      const cy = parseInt(curParts[1])
+      const currentG = gScore.get(currentKey)
+
+      // 8 vecinos: 4 ortogonales + 4 diagonales
+      const neighbors = [
+        { x: cx + 1, y: cy }, { x: cx - 1, y: cy },
+        { x: cx, y: cy + 1 }, { x: cx, y: cy - 1 },
+        { x: cx + 1, y: cy + 1 }, { x: cx - 1, y: cy + 1 },
+        { x: cx + 1, y: cy - 1 }, { x: cx - 1, y: cy - 1 }
+      ]
+
+      for (const v of neighbors) {
+        if (v.x < 0 || v.x >= cols || v.y < 0 || v.y >= rows) continue
+        if (gridData[v.x][v.y] === 999) continue   // Pared: no atravesable
+
+        // Chequeo de esquina: si el movimiento es diagonal, las dos ortogonales
+        // adyacentes deben ser transitables (evita atravesar paredes en diagonal)
+        if (v.x !== cx && v.y !== cy) {
+          if (gridData[cx][v.y] === 999 || gridData[v.x][cy] === 999) continue
+        }
+
+        // Costo del movimiento: 1 ortogonal, ~1.41 diagonal (raíz de 2)
+        const weight = (v.x !== cx && v.y !== cy) ? 1.41 : 1
+        const tentativeG = currentG + weight + (gridData[v.x][v.y] || 0)
+        const vkey = key(v)
+        const existingG = gScore.get(vkey)
+
+        if (existingG === undefined) {
+          // Primera vez que se visita este nodo
+          gScore.set(vkey, tentativeG)
+          cameFrom.set(vkey, currentKey)
+          heap.push(vkey, tentativeG + h(v, end))
+        } else if (tentativeG < existingG) {
+          // Encontró una ruta mejor a un nodo ya visitado → reabrir
+          gScore.set(vkey, tentativeG)
+          cameFrom.set(vkey, currentKey)
+          heap.update(vkey, tentativeG + h(v, end))
+        }
+      }
+    }
+
+    return null   // No se encontró ruta
+  }, [])
+
+  // Dibuja la ruta en el canvas: recibe coordenadas normalizadas (0-1) del piso
+  // 1. Convierte coordenadas a tiles de grilla (TILE=1)
+  // 2. Ejecuta A* en la grilla
+  // 3. Anima una línea discontinua roja + flecha al final
+  const drawRoute = useCallback((startCoords, endCoords) => {
+    const ctx = getCtx()
+    const canvas = canvasRef.current
+    if (!ctx || !canvas) return false
+
+    if (animRef.current) {
+      cancelAnimationFrame(animRef.current)   // Cancela animación previa
+      animRef.current = null
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    if (!startCoords || !endCoords || gridRef.current.length === 0) return false
+
+    const TILE = 1
+    // Convierte coordenadas normalizadas (0-1) a tiles de grilla
+    const toGrid = (c) => {
+      let x = Array.isArray(c) ? c[0] : c.x
+      let y = Array.isArray(c) ? c[1] : c.y
+      if (x <= 1 && y <= 1) {
+        x = x * canvas.width     // Normalizada → píxeles
+        y = y * canvas.height
+      }
+      return { x: Math.floor(x / TILE), y: Math.floor(y / TILE) }
+    }
+
+    const start = toGrid(startCoords)
+    const end = toGrid(endCoords)
+    const path = aStar(start, end)
+
+    if (!path) return false
+
+    // Calcula el ángulo de la flecha final (usando el punto 4 posiciones antes del destino)
+    const pDest = path[0]
+    const refIdx = Math.min(path.length - 1, 4)
+    const pRef = path[refIdx]
+    const xDest = pDest.x * TILE + TILE / 2
+    const yDest = pDest.y * TILE + TILE / 2
+    const xRef = pRef.x * TILE + TILE / 2
+    const yRef = pRef.y * TILE + TILE / 2
+    const angle = Math.atan2(yDest - yRef, xDest - xRef)
+
+    // Animación de la línea: discontinua con desplazamiento (efecto "moving dashes")
+    let offset = 0
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Línea discontinua animada
+      ctx.beginPath()
+      ctx.strokeStyle = "#d32f2f"
+      ctx.lineWidth = 5
+      ctx.lineCap = "round"
+      ctx.setLineDash([10, 10])
+      ctx.lineDashOffset = -offset
+
+      ctx.moveTo(
+        path[path.length - 1].x * TILE + TILE / 2,
+        path[path.length - 1].y * TILE + TILE / 2
+      )
+      for (let i = path.length - 2; i >= refIdx; i--) {
+        ctx.lineTo(
+          path[i].x * TILE + TILE / 2,
+          path[i].y * TILE + TILE / 2
+        )
+      }
+      ctx.stroke()
+
+      // Flecha en el destino
+      ctx.setLineDash([])
+      ctx.fillStyle = "#d32f2f"
+      ctx.save()
+      ctx.translate(xDest, yDest)
+      ctx.rotate(angle)
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(-18, -10)
+      ctx.lineTo(-18, 10)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+
+      offset += 0.5
+      if (offset > 20) offset = 0
+
+      animRef.current = requestAnimationFrame(animate)
+    }
+
+    animate()
+    return true
+  }, [aStar, getCtx])
+
+  // Limpia el canvas (detiene animación y borra el dibujo de la ruta)
+  const clearRoute = useCallback(() => {
+    if (animRef.current) {
+      cancelAnimationFrame(animRef.current)
+      animRef.current = null
+    }
+    const ctx = getCtx()
+    const canvas = canvasRef.current
+    if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height)
+  }, [getCtx])
+
+  useEffect(() => {
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current)
+    }
+  }, [])
+
+  return {
+    imgRef,
+    canvasRef,
+    grid,
+    isScanning,
+    mapLoaded,
+    loadMap,
+    drawRoute,
+    clearRoute
+  }
+}
