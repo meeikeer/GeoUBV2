@@ -1,9 +1,10 @@
 import { getFileContent, writeFile } from './github.js'
 import { getToken } from './auth.js'
+import { buildMapData } from '../lib/buildMapData.js'
 
 const GEODATA_PATH = 'geodata'
 
-async function readCollection(name) {
+export async function readCollection(name) {
   const token = getToken()
   try {
     const { content } = await getFileContent(`${GEODATA_PATH}/${name}.json`, token)
@@ -50,50 +51,14 @@ export const crud = {
 
   async getMapData() {
     const data = await this.getAll()
-
-    const allEdificios = []
-    const allPisos = []
-    const allHabitaciones = []
-
-    for (const sede of data.sedes || []) {
-      for (const ed of data.edificios?.filter(e => e.id_sede_fk === sede.id_sede) || []) {
-        const edInfo = { ...ed, nom_sede: sede.nom_sede, id_sede: sede.id_sede }
-        allEdificios.push(edInfo)
-        for (const p of data.pisos?.filter(p => p.id_edificio_fk === ed.id_edificio) || []) {
-          const pisoInfo = { ...p, nom_edificio: ed.nom_edificio }
-          allPisos.push(pisoInfo)
-          for (const h of data.habitaciones?.filter(h => h.id_piso_fk === p.id_piso) || []) {
-            allHabitaciones.push({
-              ...h,
-              nom_piso: p.nom_piso,
-              num_piso: p.num_piso,
-              display: p.display,
-              nom_edificio: ed.nom_edificio
-            })
-          }
-        }
-      }
-    }
-
-    const allLocations = allHabitaciones
-      .filter(h => !h.es_conexion)
-      .map(h => ({
-        id: h.id_habitacion,
-        name: h.nom_codigo,
-        floor: h.nom_piso,
-        pisoId: h.id_piso_fk,
-        categoriaId: h.id_categoria_fk,
-        coords: [h.coord_x, h.coord_y],
-        display: h.display
-      }))
-
+    const m = buildMapData(data.sedes, data.edificios, data.pisos, data.habitaciones, data.categorias)
     return {
-      sedes: data.sedes || [],
-      categorias: data.categorias || [],
-      edificios: allEdificios,
-      pisos: allPisos,
-      habitaciones: allHabitaciones,
-      allLocations
+      sedes: m.sedes,
+      categorias: m.categorias,
+      edificios: m.edificios,
+      pisos: m.pisos,
+      habitaciones: m.habitaciones,
+      allLocations: m.allLocations
     }
   },
 

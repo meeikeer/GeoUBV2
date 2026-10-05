@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { crud } from '../services/crud.js'
+import { readGeodata } from '../services/repo.js'
 import { isAuthenticated } from '../services/auth.js'
 import { normalizeMapData } from '../lib/mapDataShape.js'
 import { assetUrl } from '../lib/assets.js'
+import { buildMapData } from '../lib/buildMapData.js'
 
 const CACHE_KEY = 'geoubv_mapdata'
 const BUNDLE_URL = assetUrl('mapdata.json')
@@ -12,18 +14,13 @@ const BUNDLE_URL = assetUrl('mapdata.json')
    Para el visitante, el orden es fijo:
 
    1. localStorage    -> instantáneo, sin parpadeo. Puede estar desfasado.
-   2. mapdata.json    -> el bundle que viaja con la app. Da el offline de la
-                         primera visita y refresca cuando hay red.
-   3. API de GitHub   -> nunca para el visitante; solo para el admin.
+   2. raw.githubusercontent.com (geodata/*.json) -> en vivo, sin API.
+   3. mapdata.json    -> bundle del build, red de seguridad.
+   4. API de GitHub   -> solo para el admin (si hay token).
 
-   El admin es el caso invertido: al escribir, la fuente de verdad es el repo,
-   porque mapdata.json es un fichero estático del bundle y no refleja un PUT
-   recién hecho. Con token se lee la API primero y el bundle queda como red de
-   seguridad.
-
-   En ambos casos la prioridad es que se vea el mapa: una fuente que falla se
-   salta y se pasa a la siguiente. El token decide si se puede *actualizar*,
-   nunca si se puede *mostrar*. */
+   Con token, tras leer raw, la API puede releerse. En ambos casos la
+   prioridad es que el mapa siempre se vea. El token decide si se puede
+   *actualizar*, nunca si se puede *mostrar*. */
 export function useMapData() {
   const [raw, setRaw] = useState(() => {
     try {
@@ -65,6 +62,32 @@ export function useMapData() {
       return data
     }
 
+    const readRaw = async () => {
+      const g = await readGeodata()
+      const m = buildMapData(g.sede, g.edificio, g.piso, g.habitacion, g.categoria)
+      const data = normalizeMapData({
+        version: null,
+        updatedAt: null,
+        sedes: m.sedes,
+        categorias: m.categorias,
+        edificios: m.edificios,
+        pisos: m.pisos,
+        habitaciones: m.habitaciones,
+        allLocations: m.allLocations
+      })
+      if (!data?.pisos?.length) throw new Error('el raw no trae pisos')
+      return data
+    }
+
+    // 1. raw.githubusercontent (en vivo)
+    try {
+      save(await readRaw(), 'raw')
+      setLoading(false)
+      return
+    } catch (rawErr) {
+      // pasa a siguiente
+    }
+
     if (isAuthenticated()) {
       try {
         const data = normalizeMapData(await crud.getMapData())
@@ -74,7 +97,7 @@ export function useMapData() {
           return
         }
       } catch {
-        // token caducado o API caída: se intenta el bundle igual
+        // token caducado o API caída
       }
     }
 
@@ -82,7 +105,6 @@ export function useMapData() {
       save(await readBundle(), 'bundle')
       setLoading(false)
     } catch (bundleErr) {
-      // Sin bundle y sin API: la caché local es lo único que queda
       if (raw) {
         if (!mountedRef.current) return
         setSource('cache')
