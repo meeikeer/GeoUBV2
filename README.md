@@ -102,10 +102,14 @@ Los PNG de `client/public/assets/maps/` son la fuente visual. `client/src/worker
 
 ## Despliegue en GitHub Pages
 
-Despliegue automático con GitHub Actions (`.github/workflows/deploy-pages.yml`). Cada `push` a `main` regenera `mapdata.json`, compila `client/dist/` y publica.
+Despliegue desde rama: **Settings → Pages → Deploy from a branch → rama `main`, carpeta `/docs`**.
 
-Configuración en **Settings → Pages → Build and deployment → Source: GitHub Actions**. También hace falta `Settings → Actions → General → Workflow permissions: Read repository contents and packages permissions`.
+Cada vez que cambie **código** (no datos), ejecuta:
 
-El ciclo completo queda así: el admin guarda un cambio → la Contents API crea el commit en `geodata/` → ese commit dispara el workflow → `mapdata.json` se regenera con el cambio y se redespliega. No hay paso manual entre editar y ver el cambio publicado.
+```bash
+npm run build
+```
 
-El build usa `base: './'` en `client/vite.config.js`, así que las rutas de assets resuelven contra el subpath real del deploy sin dar 404. El Service Worker precachea los PNG de los pisos y cachea `mapdata.json` con estrategia StaleWhileRevalidate: sirve la copia guardada al instante y trae la versión nueva en segundo plano cuando hay red.
+El comando compila `client/dist/`, lo copia a `docs/` y crea `docs/.nojekyll` (scripts/publish-docs.mjs). Los **datos** (`geodata/*.json`) no necesitan rebuild: el visitante los lee directamente de `raw.githubusercontent.com`, así que los cambios hechos por el admin con su PAT quedan visibles al instante tras guardar.
+
+El build usa `base: './'` en `client/vite.config.js`, así que las rutas de assets resuelven contra el subpath real del deploy sin dar 404. El Service Worker precachea los PNG de los pisos, cachea los JSON de `raw.githubusercontent.com` (StaleWhileRevalidate) y mantiene `mapdata.json` como red de seguridad.

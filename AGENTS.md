@@ -60,11 +60,13 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 - El visitante no cambia: nunca toca la API.
 
 ## Despliegue
-- `client/dist/`, vía `.github/workflows/deploy-pages.yml` (push a `main`).
-- El commit que genera cada `PUT` del admin dispara ese workflow, que
-  regenera `mapdata.json` y redespliega. Ese es el ciclo que lleva un cambio
-  del admin hasta los visitantes, sin paso manual.
-- Settings → Pages → Source: **GitHub Actions**.
+- **Deploy from a branch**: rama `main`, carpeta **`/docs`**.
+- `npm run build` genera `client/dist/` y copia a `docs/` con `.nojekyll`
+  (scripts/publish-docs.mjs).
+- Los datos (`geodata/*.json`) se publican directamente desde `raw.githubusercontent.com`,
+  así que un cambio hecho por el admin (commit vía Contents API) queda visible
+  al instante, sin rebuild ni redespliegue.
+- El código solo necesita redespliegue cuando cambia `.jsx`, `.css`, `.html`, etc.
 - `npm run lint` vive en la raíz y delega en `client/`.
 
 ## Config
