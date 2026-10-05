@@ -1,5 +1,5 @@
-const REPO_OWNER = 'TU_GITHUB_USERNAME'
-const REPO_NAME = 'TU_REPO_NAME'
+const REPO_OWNER = 'meeikeer'
+const REPO_NAME = 'GeoUBV2'
 
 const API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`
 
