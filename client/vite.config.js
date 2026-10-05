@@ -82,6 +82,17 @@ export default defineConfig({
             }
           },
           {
+            urlPattern: /^https:\/\/raw\.githubusercontent\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'geoubv-geodata-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 7
+              }
+            }
+          },
+          {
             // Datos del mapa: sirve la copia guardada al instante y pide una
             // version nueva en segundo plano. Es lo que permite que el
             // visitante se actualice sin token y sin redesplegar.
