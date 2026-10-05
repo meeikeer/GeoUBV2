@@ -1,0 +1,357 @@
+{
+  "version": 1791232458121,
+  "updatedAt": "2026-10-05T20:34:18.121Z",
+  "sedes": [
+    {
+      "id_sede": 1,
+      "nom_sede": "UBV Sede Caracas"
+    }
+  ],
+  "categorias": [
+    {
+      "id_categoria": 1,
+      "nom_categoria": "Aula",
+      "url_icono": "/assets/icons/categ-classroom.svg"
+    },
+    {
+      "id_categoria": 2,
+      "nom_categoria": "Baño Mujeres",
+      "url_icono": "/assets/icons/categ-womans.svg"
+    },
+    {
+      "id_categoria": 3,
+      "nom_categoria": "Baño Hombres",
+      "url_icono": "/assets/icons/categ-mans.svg"
+    },
+    {
+      "id_categoria": 4,
+      "nom_categoria": "Biblioteca",
+      "url_icono": "/assets/icons/categ-library.svg"
+    },
+    {
+      "id_categoria": 5,
+      "nom_categoria": "Cafeteria",
+      "url_icono": "/assets/icons/categ-coffeeshop.svg"
+    },
+    {
+      "id_categoria": 6,
+      "nom_categoria": "Comedor",
+      "url_icono": "/assets/icons/categ-food.svg"
+    },
+    {
+      "id_categoria": 7,
+      "nom_categoria": "Coordinación",
+      "url_icono": "/assets/icons/categ-coordination.svg"
+    },
+    {
+      "id_categoria": 8,
+      "nom_categoria": "Entrada",
+      "url_icono": "/assets/icons/categ-entrance.svg"
+    },
+    {
+      "id_categoria": 9,
+      "nom_categoria": "Escaleras",
+      "url_icono": "/assets/icons/categ-stairs.svg"
+    },
+    {
+      "id_categoria": 10,
+      "nom_categoria": "Gym",
+      "url_icono": "/assets/icons/categ-gym.svg"
+    },
+    {
+      "id_categoria": 11,
+      "nom_categoria": "Laboratorio",
+      "url_icono": "/assets/icons/categ-laboratory.svg"
+    },
+    {
+      "id_categoria": 12,
+      "nom_categoria": "Oficina",
+      "url_icono": "/assets/icons/categ-office.svg"
+    },
+    {
+      "id_categoria": 13,
+      "nom_categoria": "Salud",
+      "url_icono": "/assets/icons/categ-health.svg"
+    }
+  ],
+  "edificios": [
+    {
+      "id_edificio": 1,
+      "nom_edificio": "Edificio Principal UBV",
+      "id_sede_fk": 1,
+      "nom_sede": "UBV Sede Caracas",
+      "id_sede": 1
+    }
+  ],
+  "pisos": [
+    {
+      "id_piso": 1,
+      "num_piso": -1,
+      "display": "S",
+      "nom_piso": "Sótano",
+      "url_map": "/assets/maps/mapa-sotano.png",
+      "id_edificio_fk": 1,
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_piso": 2,
+      "num_piso": 1,
+      "display": "1",
+      "nom_piso": "Piso 1",
+      "url_map": "/assets/maps/mapa-piso1.png",
+      "id_edificio_fk": 1,
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_piso": 3,
+      "num_piso": 2,
+      "display": "2",
+      "nom_piso": "Piso 2",
+      "url_map": "/assets/maps/mapa-piso2.png",
+      "id_edificio_fk": 1,
+      "nom_edificio": "Edificio Principal UBV"
+    }
+  ],
+  "habitaciones": [
+    {
+      "id_habitacion": 1,
+      "nom_codigo": "Gimnasio",
+      "coord_x": 0.7896954314527792,
+      "coord_y": 0.7906765919772536,
+      "id_piso_fk": 1,
+      "id_categoria_fk": 10,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Sótano",
+      "num_piso": -1,
+      "display": "S",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 2,
+      "nom_codigo": "Call Center",
+      "coord_x": 0.9475223504395812,
+      "coord_y": 0.6773620029780142,
+      "id_piso_fk": 1,
+      "id_categoria_fk": 12,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Sótano",
+      "num_piso": -1,
+      "display": "S",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 3,
+      "nom_codigo": "Escaleras",
+      "coord_x": 0.7637370566194236,
+      "coord_y": 0.1748364343726914,
+      "id_piso_fk": 1,
+      "id_categoria_fk": 9,
+      "es_conexion": true,
+      "nom_conexion": "escaleras_sotano",
+      "nom_piso": "Sótano",
+      "num_piso": -1,
+      "display": "S",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 4,
+      "nom_codigo": "CafeteriaTest",
+      "coord_x": 0.13969772562555502,
+      "coord_y": 0.9212347053894208,
+      "id_piso_fk": 1,
+      "id_categoria_fk": 5,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Sótano",
+      "num_piso": -1,
+      "display": "S",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 5,
+      "nom_codigo": "Baño Hombres",
+      "coord_x": 0.5795833814074618,
+      "coord_y": 0.41678224687933424,
+      "id_piso_fk": 2,
+      "id_categoria_fk": 3,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Piso 1",
+      "num_piso": 1,
+      "display": "1",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 6,
+      "nom_codigo": "Escaleras Derecha",
+      "coord_x": 0.549765973495312,
+      "coord_y": 0.4899258929535503,
+      "id_piso_fk": 2,
+      "id_categoria_fk": 9,
+      "es_conexion": true,
+      "nom_conexion": "escalera_derecha_piso_1",
+      "nom_piso": "Piso 1",
+      "num_piso": 1,
+      "display": "1",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 7,
+      "nom_codigo": "Baño Mujeres",
+      "coord_x": 0.41017043343992743,
+      "coord_y": 0.4128195238012024,
+      "id_piso_fk": 2,
+      "id_categoria_fk": 2,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Piso 1",
+      "num_piso": 1,
+      "display": "1",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 8,
+      "nom_codigo": "Escaleras Izquierda",
+      "coord_x": 0.440887667333176,
+      "coord_y": 0.4954425154036016,
+      "id_piso_fk": 2,
+      "id_categoria_fk": 9,
+      "es_conexion": true,
+      "nom_conexion": "escalera_izquierda_piso_1",
+      "nom_piso": "Piso 1",
+      "num_piso": 1,
+      "display": "1",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 9,
+      "nom_codigo": "OficinaTest",
+      "coord_x": 0.3064452534224182,
+      "coord_y": 0.7330097087378641,
+      "id_piso_fk": 2,
+      "id_categoria_fk": 12,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Piso 1",
+      "num_piso": 1,
+      "display": "1",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 10,
+      "nom_codigo": "Escaleras",
+      "coord_x": 0.48482142857142857,
+      "coord_y": 0.23505439494560895,
+      "id_piso_fk": 3,
+      "id_categoria_fk": 9,
+      "es_conexion": true,
+      "nom_conexion": "escaleras_piso_2",
+      "nom_piso": "Piso 2",
+      "num_piso": 2,
+      "display": "2",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 11,
+      "nom_codigo": "Laboratorio 2H",
+      "coord_x": 0.3,
+      "coord_y": 0.8862460025491725,
+      "id_piso_fk": 3,
+      "id_categoria_fk": 11,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Piso 2",
+      "num_piso": 2,
+      "display": "2",
+      "nom_edificio": "Edificio Principal UBV"
+    }
+  ],
+  "allLocations": [
+    {
+      "id": 1,
+      "name": "Gimnasio",
+      "floor": "Sótano",
+      "pisoId": 1,
+      "categoriaId": 10,
+      "coords": [
+        0.7896954314527792,
+        0.7906765919772536
+      ],
+      "display": "S"
+    },
+    {
+      "id": 2,
+      "name": "Call Center",
+      "floor": "Sótano",
+      "pisoId": 1,
+      "categoriaId": 12,
+      "coords": [
+        0.9475223504395812,
+        0.6773620029780142
+      ],
+      "display": "S"
+    },
+    {
+      "id": 4,
+      "name": "CafeteriaTest",
+      "floor": "Sótano",
+      "pisoId": 1,
+      "categoriaId": 5,
+      "coords": [
+        0.13969772562555502,
+        0.9212347053894208
+      ],
+      "display": "S"
+    },
+    {
+      "id": 5,
+      "name": "Baño Hombres",
+      "floor": "Piso 1",
+      "pisoId": 2,
+      "categoriaId": 3,
+      "coords": [
+        0.5795833814074618,
+        0.41678224687933424
+      ],
+      "display": "1"
+    },
+    {
+      "id": 7,
+      "name": "Baño Mujeres",
+      "floor": "Piso 1",
+      "pisoId": 2,
+      "categoriaId": 2,
+      "coords": [
+        0.41017043343992743,
+        0.4128195238012024
+      ],
+      "display": "1"
+    },
+    {
+      "id": 9,
+      "name": "OficinaTest",
+      "floor": "Piso 1",
+      "pisoId": 2,
+      "categoriaId": 12,
+      "coords": [
+        0.3064452534224182,
+        0.7330097087378641
+      ],
+      "display": "1"
+    },
+    {
+      "id": 11,
+      "name": "Laboratorio 2H",
+      "floor": "Piso 2",
+      "pisoId": 3,
+      "categoriaId": 11,
+      "coords": [
+        0.3,
+        0.8862460025491725
+      ],
+      "display": "2"
+    }
+  ]
+}
