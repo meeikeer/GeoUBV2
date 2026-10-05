@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import LoginPanel from '../components/map/LoginPanel.jsx'
 import AssetIcon from '../components/icons/AssetIcon.jsx'
 import ProblemSection from '../components/landing/ProblemSection.jsx'
+import MiniMap from '../components/landing/MiniMap.jsx'
 import { login } from '../services/auth.js'
 
 const DIRECTORY = [
@@ -50,78 +51,6 @@ function BrandMark({ size = 'md' }) {
   return (
     <div className={`chamfer chamfer-sm grid ${box} place-items-center bg-brand-400 text-ink-950`}>
       <AssetIcon name="pin" className={icon} />
-    </div>
-  )
-}
-
-function MiniMap() {
-  return (
-    <div className="relative">
-      <div className="chamfer chamfer-lg panel relative overflow-hidden">
-        <div className="blueprint-grid absolute inset-0 opacity-70" aria-hidden="true" />
-        <div className="vignette absolute inset-0" aria-hidden="true" />
-
-        {/* Planta esquemática */}
-        <div className="relative aspect-[4/3] w-full sm:aspect-[16/11]">
-          <div className="absolute inset-[8%] border border-white/10" aria-hidden="true">
-            <div className="absolute left-0 top-0 h-[38%] w-[46%] border-b border-r border-white/10" />
-            <div className="absolute right-0 top-0 h-[38%] w-[38%] border-b border-l border-white/10" />
-            <div className="absolute bottom-0 left-0 h-[34%] w-[62%] border-r border-t border-white/10" />
-            <div className="absolute bottom-0 right-0 h-[34%] w-[30%] border-l border-t border-white/10" />
-            <div className="absolute left-[46%] top-0 h-[38%] w-[16%] border-x border-white/10" />
-            <div className="absolute left-0 top-[38%] h-[28%] w-full border-y border-dashed border-white/[0.07]" />
-          </div>
-
-          {/* Marcadores */}
-          {[
-            { l: '26%', t: '32%', icon: 'aula', tone: 'text-brand-400' },
-            { l: '68%', t: '26%', icon: 'biblioteca', tone: 'text-signal-400' },
-            { l: '46%', t: '72%', icon: 'escaleras', tone: 'text-slate-300' }
-          ].map((m, i) => (
-            <div
-              key={i}
-              className="absolute"
-              style={{ left: m.l, top: m.t, transform: 'translate(-50%, -50%)' }}
-            >
-              <div className={`marker-pin chamfer-sm h-7 w-7 rotate-45 ${m.tone}`}>
-                <AssetIcon name={m.icon} className="h-3.5 w-3.5 -rotate-45" />
-              </div>
-            </div>
-          ))}
-
-          {/* Trazo de ruta */}
-          <svg
-            className="pointer-events-none absolute inset-0 h-full w-full"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M26 32 L46 40 L46 62 L68 26"
-              fill="none"
-              stroke="rgba(245,158,11,0.5)"
-              strokeWidth="0.7"
-              strokeDasharray="2.5 2"
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-
-          {/* Chip de piso */}
-          <div className="absolute right-3 top-3 chip chamfer chamfer-sm bg-ink-950/80">
-            <span className="text-brand-400">Piso</span>
-            <span className="font-mono text-slate-100">1</span>
-          </div>
-
-          {/* Chip de ruta activa */}
-          <div className="absolute bottom-3 left-3 chamfer chamfer-sm border border-signal-400/30 bg-ink-950/85 px-3 py-1.5 backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-100">
-              <span className="h-1.5 w-1.5 rounded-full bg-signal-400" />
-              A-204 → B-118
-            </div>
-            <div className="mt-0.5 pl-3.5 font-mono text-[10px] text-slate-500">1 min · 84 m</div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
