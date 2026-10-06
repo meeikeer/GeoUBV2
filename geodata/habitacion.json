@@ -108,5 +108,15 @@
     "id_categoria_fk": 11,
     "es_conexion": false,
     "nom_conexion": null
+  },
+  {
+    "id_habitacion": 12,
+    "nom_codigo": "Habitación TEST",
+    "id_categoria_fk": 1,
+    "id_piso_fk": 1,
+    "coord_x": 0.5173814559204085,
+    "coord_y": 0.6782609438758712,
+    "es_conexion": false,
+    "nom_conexion": null
   }
 ]
