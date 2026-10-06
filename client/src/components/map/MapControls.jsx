@@ -3,11 +3,11 @@ import AssetIcon from '../icons/AssetIcon.jsx'
 /* Un solo juego de controles, siempre en el mismo sitio y con el readout en
    todos los breakpoints. Antes coexistían dos: una columna móvil en MapPage
    (sin readout) y otra en la barra inferior (hidden en móvil). */
-export default function MapControls({ zoom, onZoomIn, onZoomOut, onFit }) {
+export default function MapControls({ zoom, onZoomIn, onZoomOut, onFit, className = '' }) {
   return (
     <div
       data-ui="true"
-      className="absolute bottom-4 right-3 z-30 flex flex-col gap-1.5"
+      className={`absolute bottom-4 right-3 z-30 flex flex-col gap-1.5 ${className}`}
       role="group"
       aria-label="Controles del plano"
     >
