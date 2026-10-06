@@ -1,6 +1,6 @@
 {
-  "version": 1791232458121,
-  "updatedAt": "2026-10-05T20:34:18.121Z",
+  "version": 1791261637955,
+  "updatedAt": "2026-10-06T04:40:37.955Z",
   "sedes": [
     {
       "id_sede": 1,
@@ -170,8 +170,36 @@
       "nom_edificio": "Edificio Principal UBV"
     },
     {
+      "id_habitacion": 12,
+      "nom_codigo": "Habitación TEST",
+      "id_categoria_fk": 1,
+      "id_piso_fk": 1,
+      "coord_x": 0.5173814559204085,
+      "coord_y": 0.6782609438758712,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Sótano",
+      "num_piso": -1,
+      "display": "S",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
+      "id_habitacion": 13,
+      "nom_codigo": "Oficina 123",
+      "id_categoria_fk": 12,
+      "id_piso_fk": 1,
+      "coord_x": 0.41094816721930666,
+      "coord_y": 0.6782609283713334,
+      "es_conexion": false,
+      "nom_conexion": null,
+      "nom_piso": "Sótano",
+      "num_piso": -1,
+      "display": "S",
+      "nom_edificio": "Edificio Principal UBV"
+    },
+    {
       "id_habitacion": 5,
-      "nom_codigo": "Baño Hombres",
+      "nom_codigo": "BaÃ±o Hombres",
       "coord_x": 0.5795833814074618,
       "coord_y": 0.41678224687933424,
       "id_piso_fk": 2,
@@ -199,7 +227,7 @@
     },
     {
       "id_habitacion": 7,
-      "nom_codigo": "Baño Mujeres",
+      "nom_codigo": "BaÃ±o Mujeres",
       "coord_x": 0.41017043343992743,
       "coord_y": 0.4128195238012024,
       "id_piso_fk": 2,
@@ -306,8 +334,32 @@
       "display": "S"
     },
     {
+      "id": 12,
+      "name": "Habitación TEST",
+      "floor": "Sótano",
+      "pisoId": 1,
+      "categoriaId": 1,
+      "coords": [
+        0.5173814559204085,
+        0.6782609438758712
+      ],
+      "display": "S"
+    },
+    {
+      "id": 13,
+      "name": "Oficina 123",
+      "floor": "Sótano",
+      "pisoId": 1,
+      "categoriaId": 12,
+      "coords": [
+        0.41094816721930666,
+        0.6782609283713334
+      ],
+      "display": "S"
+    },
+    {
       "id": 5,
-      "name": "Baño Hombres",
+      "name": "BaÃ±o Hombres",
       "floor": "Piso 1",
       "pisoId": 2,
       "categoriaId": 3,
@@ -319,7 +371,7 @@
     },
     {
       "id": 7,
-      "name": "Baño Mujeres",
+      "name": "BaÃ±o Mujeres",
       "floor": "Piso 1",
       "pisoId": 2,
       "categoriaId": 2,
