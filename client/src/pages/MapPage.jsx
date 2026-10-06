@@ -185,7 +185,17 @@ export default function MapPage() {
     }
     const calculated = rm.calculateRoute(selectedOrigin, selectedDest, fm, ml)
     if (calculated !== false) setRoutePanelOpen(false)
-  }, [selectedOrigin, selectedDest, rm, fm, ml, toast])
+
+    /* El encuadre por defecto es cover, que en un plano apaisado dentro de una
+       pantalla vertical deja fuera buena parte del edificio: la ruta se trazaba
+       fuera de la vista y parecia que no habia pasado nada. framePoints baja la
+       escala lo justo para que los dos extremos quepan. */
+    const from = selectedOrigin.coords
+    const to = selectedDest.coords
+    if (from && to) {
+      panZoom.framePoints([from, to])
+    }
+  }, [selectedOrigin, selectedDest, rm, fm, ml, toast, panZoom])
 
   const handleClearRoute = useCallback(() => {
     if (!rm.currentRoute) return
@@ -335,7 +345,14 @@ export default function MapPage() {
         onHelpClick={() => setOnboardingOpen(true)}
       />
 
-      <main className="flex min-h-0 flex-1 flex-col" onClick={handleStageClick}>
+      {/* relative es imprescindible: MapControls, RouteBanner y los estados son
+          absolute y se posicionan contra este contenedor. Sin esto se
+          posicionan contra el viewport, el banner queda detras de la TopBar
+          (z-40 > z-30) y los controles invaden la barra inferior. */}
+      <main
+        className="relative flex min-h-0 flex-1 flex-col"
+        onClick={handleStageClick}
+      >
         <MapStage
           ref={stageRef}
           piso={fm.currentPiso}

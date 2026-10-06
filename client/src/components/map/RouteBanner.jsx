@@ -68,10 +68,13 @@ export default function RouteBanner({
 
         <div className="flex flex-none items-center gap-1">
           {onFocusDest && (
+            /* Antes estaba oculto en movil con hidden sm:inline-flex, y en
+               movil es justo donde hace falta: la ruta se traza fuera del
+               encuadre y no habia forma de verla. */
             <button
               type="button"
               onClick={onFocusDest}
-              className="btn btn-ghost chamfer-sm hidden h-8 px-2.5 text-[11px] text-slate-400 hover:text-white sm:inline-flex"
+              className="btn btn-ghost chamfer-sm flex h-8 flex-none items-center gap-1 px-2.5 text-[11px] text-slate-400 hover:text-white"
               title="Centrar el destino en el plano"
             >
               <AssetIcon name="pin" className="h-3.5 w-3.5" />

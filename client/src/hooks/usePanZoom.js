@@ -19,6 +19,7 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
   const velocityRef = useRef({ x: 0, y: 0 })
   const isDraggingRef = useRef(false)
   const readyRef = useRef(false)
+  const startLoopRef = useRef(null)
   const lastPointerRef = useRef({ x: 0, y: 0 })
   const rafRef = useRef(null)
   const limitsRef = useRef({ min: 0.1, max: 8, fit: 1, cover: 1 })
@@ -85,6 +86,7 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     velocityRef.current = { x: 0, y: 0 }
     transformRef.current = { ...targetRef.current }
     applyTransform()
+    startLoopRef.current?.()
     publishZoom(scale, true)
     readyRef.current = true
     setReady(true)
@@ -116,6 +118,10 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     targetRef.current.y = centerY - (centerY - targetRef.current.y) * ratio
     constrain()
     publishZoom(newScale)
+    // El bucle solo arrancaba desde la rueda, el teclado y el raton: los
+    // botones + y - cambiaban el estado pero no el transform, asi que no se
+    // veia nada. El loop aplica el transform con inercia hacia targetRef.
+    startLoopRef.current?.()
   }, [constrain, publishZoom])
 
   const zoomIn = useCallback(() => zoomToPoint(1 + ZOOM_STEP, 0, 0), [zoomToPoint])
@@ -135,6 +141,48 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     constrain()
     publishZoom(scale, true)
   }, [getPlaneSize, getStageRect, constrain, publishZoom])
+
+  /* Encuadra un conjunto de puntos normalizados del plano: baja la escala hasta
+     que quepan visibles y centra en su punto medio.
+
+     Necesario porque cover es la vista inicial y, en una planta apaisada dentro
+     de una pantalla vertical, el plano queda mucho mas ancho que el escenario.
+     Un extremo de la ruta puede quedar a 1200 px del centro, fuera del alcance
+     del paneo, y la ruta se trazaba sin verse. */
+const framePoints = useCallback((points) => {
+    const rect = getStageRect()
+    const { w, h } = getPlaneSize()
+    const list = points?.filter(p => Array.isArray(p) && p.length === 2) || []
+    if (!rect || !w || !h || list.length === 0) return
+
+    const xs = list.map(p => p[0] * w)
+    const ys = list.map(p => p[1] * h)
+    const minX = Math.min(...xs), maxX = Math.max(...xs)
+    const minY = Math.min(...ys), maxY = Math.max(...ys)
+
+    const pad = 48
+    const scaleForWidth = rect.width / (maxX - minX + pad * 2)
+    const scaleForHeight = rect.height / (maxY - minY + pad * 2)
+
+    const scales = readScales()
+    const floor = scales ? scales.contain : limitsRef.current.min
+    const scale = clamp(
+      Math.min(scaleForWidth, scaleForHeight),
+      floor,
+      limitsRef.current.max
+    )
+
+    const cx = (minX + maxX) / 2
+    const cy = (minY + maxY) / 2
+
+    targetRef.current.scale = scale
+    targetRef.current.x = rect.width / 2 - cx * scale
+    targetRef.current.y = rect.height / 2 - cy * scale
+    velocityRef.current = { x: 0, y: 0 }
+    constrain()
+    startLoopRef.current?.()
+    publishZoom(scale, true)
+  }, [getStageRect, getPlaneSize, readScales, constrain, publishZoom])
 
   const nudge = useCallback((dx, dy) => {
     targetRef.current.x += dx
@@ -199,6 +247,8 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     const startLoop = () => {
       if (!rafRef.current) rafRef.current = requestAnimationFrame(loop)
     }
+
+    startLoopRef.current = startLoop
 
     const onWheel = (e) => {
       e.preventDefault()
@@ -346,10 +396,21 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     window.addEventListener('resize', onResize)
     window.addEventListener('orientationchange', onResize)
 
+    /* ResizeObserver y no solo el evento resize de window: al cargar el PNG se
+       reencuadra desde onLoad, y en ese momento el layout todavia no ha
+       asentado. El escenario se media con una altura enorme y el cover salia
+       de 8.6x en vez de 1.2x, que era el tope que se acababa de fijar. El
+       observador dispara en cuanto el tamaño real es el definitivo y deja el
+       encuadre correcto, ademas de cubrir la barra del navegador en movil. */
+    const observer = new ResizeObserver(() => onResize())
+    observer.observe(stage)
+
     rafRef.current = requestAnimationFrame(loop)
 
     return () => {
       clearTimeout(resizeTimer)
+      observer.disconnect()
+      startLoopRef.current = null
       stage.removeEventListener('wheel', onWheel)
       stage.removeEventListener('mousedown', onMouseDown)
       stage.removeEventListener('keydown', onKeyDown)
@@ -367,5 +428,5 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     nudge, constrain, applyTransform, readScales, publishZoom, reducedMotion
   ])
 
-  return { zoom, ready, zoomIn, zoomOut, fitToScreen, resetToCover, centerOn, limits: limitsRef }
+  return { zoom, ready, zoomIn, zoomOut, fitToScreen, resetToCover, centerOn, framePoints, limits: limitsRef }
 }

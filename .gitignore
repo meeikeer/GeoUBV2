@@ -45,6 +45,11 @@ temp-repo/
 *.backup
 mapdata.backup.json
 
+# Browser verification (playwright-check.mjs / playwright-shots.mjs)
+shots/
+test-results/
+playwright-report/
+
 # GitHub Pages (Jekyll defaults)
 _site/
 .sass-cache/
