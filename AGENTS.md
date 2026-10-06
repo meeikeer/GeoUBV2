@@ -51,12 +51,16 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 - `mapdata.json` se genera **antes del deploy**, no en runtime.
 
 ## Escritura y refresco
-- Flujo admin en 2 pasos: el formulario **etapa** el cambio en memoria
-  (`stagedChange` en `MapPage`, un solo borrador) y se revisa en
-  `AdminPreviewDock` (no modal: vista Mapa con `PreviewOverlay` o vista JSON con
-  diff antes/después). Solo "Publicar" ejecuta el `crud.*` correspondiente y
-  refresca; "Descartar" (o logout / token caducado) borra el borrador. Cerrar
-  el dock solo lo minimiza: se reabre desde el botón "Preview" de `AdminToolbar`.
+- Flujo admin en 2 pasos: cada formulario **etapa** su cambio en la cola de la
+  sesión (`stagedChanges` en `MapPage`, fusionando por registro y conservando
+  el `before` original) y se revisa en `AdminPreviewDock` (no modal: lista de
+  la sesión, vista Mapa con `PreviewOverlay` multi-cambio o vista JSON con los
+  diffs apilados). Solo "Publicar" ejecuta `crud.applyChanges`, que agrupa por
+  fichero → **1 commit por `geodata/*.json` tocado**; en fallo parcial lo
+  publicado sale de la cola y lo fallido queda pendiente con su error.
+  "Descartar todo" (o logout / token caducado) borra la sesión. Cerrar el dock
+  solo lo minimiza: se reabre desde el botón "Preview" de `AdminToolbar`
+  (contador de cambios pendientes).
 - `crud.readCollection` es API pública: la usan `AdminPanel` (pestañas pisos,
   edificios, categorías) y `MapPage` (listado de ubicaciones).
 - Para el admin, `useMapData` lee **primero la API de GitHub** y usa
