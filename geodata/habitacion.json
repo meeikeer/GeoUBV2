@@ -41,7 +41,7 @@
   },
   {
     "id_habitacion": 5,
-    "nom_codigo": "BaÃ±o Hombres",
+    "nom_codigo": "Ba�o Hombres",
     "coord_x": 0.5795833814074618,
     "coord_y": 0.41678224687933424,
     "id_piso_fk": 2,
@@ -61,7 +61,7 @@
   },
   {
     "id_habitacion": 7,
-    "nom_codigo": "BaÃ±o Mujeres",
+    "nom_codigo": "Ba�o Mujeres",
     "coord_x": 0.41017043343992743,
     "coord_y": 0.4128195238012024,
     "id_piso_fk": 2,
@@ -78,16 +78,6 @@
     "id_categoria_fk": 9,
     "es_conexion": true,
     "nom_conexion": "escalera_izquierda_piso_1"
-  },
-  {
-    "id_habitacion": 9,
-    "nom_codigo": "OficinaTest",
-    "coord_x": 0.3064452534224182,
-    "coord_y": 0.7330097087378641,
-    "id_piso_fk": 2,
-    "id_categoria_fk": 12,
-    "es_conexion": false,
-    "nom_conexion": null
   },
   {
     "id_habitacion": 10,
@@ -136,6 +126,16 @@
     "id_piso_fk": 1,
     "coord_x": 0.3290698601728512,
     "coord_y": 0.6782728683217679,
+    "es_conexion": false,
+    "nom_conexion": null
+  },
+  {
+    "id_habitacion": 15,
+    "nom_codigo": "Oficina  RH",
+    "id_categoria_fk": 12,
+    "id_piso_fk": 2,
+    "coord_x": 0.2677848148959024,
+    "coord_y": 0.9156067756258529,
     "es_conexion": false,
     "nom_conexion": null
   }
