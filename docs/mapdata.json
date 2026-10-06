@@ -1,6 +1,6 @@
 {
-  "version": 1791309705552,
-  "updatedAt": "2026-10-06T18:01:45.552Z",
+  "version": 1791311111940,
+  "updatedAt": "2026-10-06T18:25:11.940Z",
   "sedes": [
     {
       "id_sede": 1,
@@ -213,7 +213,7 @@
     },
     {
       "id_habitacion": 5,
-      "nom_codigo": "Ba�o Hombres",
+      "nom_codigo": "Baño Hombres",
       "coord_x": 0.5795833814074618,
       "coord_y": 0.41678224687933424,
       "id_piso_fk": 2,
@@ -241,7 +241,7 @@
     },
     {
       "id_habitacion": 7,
-      "nom_codigo": "Ba�o Mujeres",
+      "nom_codigo": "Baño Mujeres",
       "coord_x": 0.41017043343992743,
       "coord_y": 0.4128195238012024,
       "id_piso_fk": 2,
@@ -385,7 +385,7 @@
     },
     {
       "id": 5,
-      "name": "Ba�o Hombres",
+      "name": "Baño Hombres",
       "floor": "Piso 1",
       "pisoId": 2,
       "categoriaId": 3,
@@ -397,7 +397,7 @@
     },
     {
       "id": 7,
-      "name": "Ba�o Mujeres",
+      "name": "Baño Mujeres",
       "floor": "Piso 1",
       "pisoId": 2,
       "categoriaId": 2,
