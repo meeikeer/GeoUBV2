@@ -7,7 +7,7 @@ export default function AdminToolbar({
   addingMode,
   onToggleAdd,
   onOpenList,
-  hasDraft,
+  draftCount = 0,
   previewOpen,
   onOpenPreview,
   onLogout
@@ -45,7 +45,7 @@ export default function AdminToolbar({
         <span className="hidden sm:inline">Lista</span>
       </button>
 
-      {hasDraft && (
+      {draftCount > 0 && (
         <button
           type="button"
           onClick={onOpenPreview}
@@ -54,7 +54,7 @@ export default function AdminToolbar({
               ? 'bg-brand-400/15 text-brand-300'
               : 'btn-ghost text-slate-300 hover:text-white'
           }`}
-          aria-label="Ver el preview del cambio pendiente"
+          aria-label={`Ver el preview de la sesión (${draftCount} pendientes)`}
           aria-pressed={previewOpen}
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -62,9 +62,12 @@ export default function AdminToolbar({
             <circle cx="12" cy="12" r="3" />
           </svg>
           <span className="hidden sm:inline">Preview</span>
-          {!previewOpen && (
-            <span className="h-1.5 w-1.5 rounded-full bg-signal-400" aria-hidden="true" />
-          )}
+          <span
+            className="grid h-4 min-w-4 place-items-center rounded-full bg-signal-400 px-1 text-[10px] font-bold leading-none text-ink-950"
+            aria-hidden="true"
+          >
+            {draftCount}
+          </span>
         </button>
       )}
 

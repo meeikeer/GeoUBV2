@@ -1,7 +1,12 @@
 import AssetIcon from '../icons/AssetIcon.jsx'
 import { resolveIcon } from '../../lib/categorias.js'
 
-/* Marcadores fantasma del preview.
+/* Marcadores del preview de sesión.
+
+   Pinta TODOS los cambios etapados que afectan a la planta actual, no solo el
+   seleccionado: el seleccionado sale con etiqueta y opacidad completa y el
+   resto solo con su marcador, para que el admin vea la sesión entera sin
+   saturar el plano.
 
    Va como hijo del plano (hermano de MarkerLayer) para compartir su sistema de
    coordenadas 0-1, y con pointer-events-none para no tapar el plano: el dock de
@@ -47,20 +52,11 @@ function Ring({ color }) {
   )
 }
 
-export default function PreviewOverlay({
-  isOpen,
-  view,
-  change,
-  currentPisoId,
-  locations,
-  categorias,
-  scale = 1
-}) {
-  if (!isOpen || !change || view !== 'map') return null
-
+/* Marcadores que corresponde pintar para UN cambio en la planta `currentPisoId`.
+   Devuelve [] si el cambio no toca esta planta. */
+function changeItems(change, { currentPisoId, locations, categorias }) {
   const { entity, op, body, before, id } = change
   const items = []
-
   const categoriaOf = (catId) => (categorias || []).find(c => c.id_categoria === catId) || null
 
   if (entity === 'habitacion') {
@@ -69,7 +65,6 @@ export default function PreviewOverlay({
     if (op === 'create' && body?.id_piso_fk === currentPisoId) {
       const cat = categoriaOf(body.id_categoria_fk)
       items.push({
-        key: 'ghost',
         kind: 'create',
         coords: [body.coord_x, body.coord_y],
         label: `Nuevo: ${body.nom_codigo}`,
@@ -79,7 +74,6 @@ export default function PreviewOverlay({
       })
     } else if (op === 'delete' && before?.id_piso_fk === currentPisoId && (live || before)) {
       items.push({
-        key: 'ghost',
         kind: 'delete',
         coords: live ? live.coords : [before.coord_x, before.coord_y],
         label: `Se eliminará: ${before.nom_codigo}`,
@@ -92,7 +86,6 @@ export default function PreviewOverlay({
         // Cambió de piso: en la planta destino aún no hay marcador.
         const cat = categoriaOf(body.id_categoria_fk)
         items.push({
-          key: 'ghost',
           kind: 'create',
           coords: [body.coord_x, body.coord_y],
           label: `Se moverá aquí: ${body.nom_codigo}`,
@@ -100,9 +93,17 @@ export default function PreviewOverlay({
           bg: '#2a2418',
           icon: resolveIcon(body.id_categoria_fk, cat?.nom_categoria, cat?.url_icono)
         })
+      } else if (moved && before?.id_piso_fk === currentPisoId) {
+        // Cambió de piso: en la planta origen el marcador actual desaparecerá.
+        items.push({
+          kind: 'delete',
+          coords: live ? live.coords : [before.coord_x, before.coord_y],
+          label: `Se irá de aquí: ${before.nom_codigo}`,
+          color: '#f87171',
+          bg: '#2a1414'
+        })
       } else if (!moved && before?.id_piso_fk === currentPisoId) {
         items.push({
-          key: 'ghost',
           kind: 'edit',
           coords: live ? live.coords : [before.coord_x, before.coord_y],
           label: body?.nom_codigo !== before?.nom_codigo
@@ -117,14 +118,35 @@ export default function PreviewOverlay({
     // Los marcadores no cambian de sitio: lo que cambia es su aspecto (nombre
     // e icono) o su existencia, así que se resalta el conjunto afectado.
     const affected = (locations || []).filter(l => l.categoriaId === id)
-    affected.forEach((l, i) => {
+    affected.forEach((l) => {
       items.push({
-        key: `cat-${l.id}-${i}`,
         kind: op === 'delete' ? 'delete' : 'edit',
         coords: l.coords,
         color: op === 'delete' ? '#f87171' : '#fbbf24'
       })
     })
+  }
+
+  return items
+}
+
+export default function PreviewOverlay({
+  isOpen,
+  view,
+  changes,
+  selectedKey,
+  currentPisoId,
+  locations,
+  categorias,
+  scale = 1
+}) {
+  if (!isOpen || !changes || changes.length === 0 || view !== 'map') return null
+
+  const items = []
+  for (const change of changes) {
+    const selected = change.key === selectedKey
+    const built = changeItems(change, { currentPisoId, locations, categorias })
+    built.forEach((item, i) => items.push({ ...item, key: `${change.key}-${i}`, selected }))
   }
 
   if (items.length === 0) return null
@@ -138,7 +160,8 @@ export default function PreviewOverlay({
           style={{
             left: `${item.coords[0] * 100}%`,
             top: `${item.coords[1] * 100}%`,
-            transform: 'translate(-50%, -50%)'
+            transform: 'translate(-50%, -50%)',
+            opacity: item.selected ? 1 : 0.7
           }}
         >
           <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
@@ -147,7 +170,7 @@ export default function PreviewOverlay({
             ) : (
               <GhostPin icon={item.icon || { name: 'pin' }} color={item.color} bg={item.bg || '#171b25'} kind={item.kind} />
             )}
-            {item.label && (
+            {item.selected && item.label && (
               <span className="marker-label" style={{ color: item.color }}>
                 {item.label}
               </span>
