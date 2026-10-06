@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoginPanel from '../components/map/LoginPanel.jsx'
 import AssetIcon from '../components/icons/AssetIcon.jsx'
+import CacheReloadButton from '../components/ui/CacheReloadButton.jsx'
 import ProblemSection from '../components/landing/ProblemSection.jsx'
 import MiniMap from '../components/landing/MiniMap.jsx'
 import { login } from '../services/auth.js'
@@ -133,6 +134,7 @@ function LandingPage() {
                 Sin conexión
               </span>
             )}
+            <CacheReloadButton label="Recargar" />
             <button
               onClick={handleOpenLogin}
               className="btn btn-ghost chamfer chamfer-sm h-10 px-3 text-[13px] sm:px-4"

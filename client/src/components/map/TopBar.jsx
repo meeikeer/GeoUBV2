@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import SearchInput from './SearchInput.jsx'
 import AssetIcon from '../icons/AssetIcon.jsx'
+import CacheReloadButton from '../ui/CacheReloadButton.jsx'
 
 /* La barra superior. La búsqueda se queda siempre visible: antes, al haber ruta
    activa, el input se sustituía por dos chips y el usuario perdía justo la
@@ -71,6 +72,10 @@ export default function TopBar({
             onChange={setQuery}
           />
         </div>
+
+        {/* Visible también en móvil: el botón de ayuda no lo está, y la
+            caché vieja es justo el problema del teléfono. */}
+        <CacheReloadButton className="btn btn-ghost chamfer-sm grid h-10 w-10 shrink-0 place-items-center text-slate-400 hover:text-white" />
 
         <button
           type="button"

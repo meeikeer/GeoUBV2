@@ -3,12 +3,15 @@ import { crud } from '../services/crud.js'
 import { readGeodata } from '../services/repo.js'
 import { isAuthenticated } from '../services/auth.js'
 import { normalizeMapData } from '../lib/mapDataShape.js'
+import { MAPDATA_KEY } from '../lib/cacheReset.js'
 import { assetUrl } from '../lib/assets.js'
 import { buildMapData } from '../lib/buildMapData.js'
 
 // v2: la caché previa guardaba texto corrompido (Ã± / U+FFFD) escrito con
-// btoa/atob en Latin-1, así que se invalida en vez de reutilizarla.
-const CACHE_KEY = 'geoubv_mapdata_v2'
+// btoa/atob en Latin-1, así que se invalida en vez de reutilizarla. La clave
+// vive en lib/cacheReset.js para que el botón "Recargar caché" borre justo
+// esta misma entrada.
+const CACHE_KEY = MAPDATA_KEY
 const BUNDLE_URL = assetUrl('mapdata.json')
 
 /* Carga de datos del mapa, en cascada y tolerante a fallos.

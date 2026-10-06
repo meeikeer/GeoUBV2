@@ -7,6 +7,12 @@
   escribe en GitHub cuando hay un admin autenticado.
 - Offline: Service Worker cachea los PNG (precache) y `mapdata.json`
   (StaleWhileRevalidate). El mapa se usa sin conexión desde la primera visita.
+- Recarga manual: botón "Recargar caché" (Landing + TopBar del mapa) → vacía
+  Cache Storage + `localStorage` de datos, fuerza `registration.update()` y
+  recarga. Es el Ctrl+F5 del móvil y es más completo que el de escritorio:
+  Ctrl+F5 solo salta la caché HTTP, no toca las cachés del SW ni el
+  instantáneo de datos. Deshabilitado sin conexión. Lógica en
+  `lib/cacheReset.js`, UI en `components/ui/CacheReloadButton.jsx`.
 - Pathfinding: A* sobre grilla de caminabilidad generada desde PNG del mapa, en Web Worker.
 
 ## Modelo de datos (fuente de verdad y origen de cada lectura)
@@ -28,8 +34,8 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 ## Estructura (`client/src/`)
 - `services/`: `github.js` (fetch wrapper; constantes `REPO_OWNER`, `REPO_NAME`), `auth.js` (validación PAT, sesión), `crud.js` (CRUD sobre `geodata/*.json`)
 - `hooks/`: `useMapData.js` (cascada de carga), `useFloorManager.js`, `useMapLoader.js`, `useRouteManager.js`, `usePanZoom.js`, `useToast.js`
-- `lib/`: `assets.js` (rutas de assets y tamaños de PNG), `categorias.js` (catálogo de las 13), `framing.js` (matemática de encuadre), `mapDataShape.js` (normalización del bundle), `previewChange.js` (entidades/ops y diff del preview admin)
-- `components/map/` (TopBar, BottomToolbar, MapStage, AdminPreviewDock, PreviewOverlay, etc.), `components/ui/` (Sheet, Dock), `components/icons/` (SVG)
+- `lib/`: `assets.js` (rutas de assets y tamaños de PNG), `categorias.js` (catálogo de las 13), `framing.js` (matemática de encuadre), `mapDataShape.js` (normalización del bundle), `previewChange.js` (entidades/ops y diff del preview admin), `cacheReset.js` (`resetAppCache` y la clave del localStorage de datos)
+- `components/map/` (TopBar, BottomToolbar, MapStage, AdminPreviewDock, PreviewOverlay, etc.), `components/ui/` (Sheet, Dock, CacheReloadButton), `components/icons/` (SVG)
 - `pages/`: `LandingPage.jsx`, `MapPage.jsx`
 - `workers/mapScanner.worker.js`
 - `App.jsx`, `App.css`, `main.jsx`, `index.css`
