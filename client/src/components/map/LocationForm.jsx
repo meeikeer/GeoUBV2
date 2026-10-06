@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import AssetIcon from '../icons/AssetIcon.jsx'
 import Sheet from '../ui/Sheet.jsx'
 
@@ -13,7 +13,23 @@ export default function LocationForm({ isOpen, onClose, onSave, initialData, pis
 
   const isEditing = !!initialData?.id_habitacion
 
+  /* Rellena el formulario solo cuando cambia el OBJETIVO (otra ubicación,
+     otro pin, o cierre), no en cada re-render del padre.
+
+     En creación MapPage construye initialData con un objeto nuevo en cada
+     render, y un refresh de datos en segundo plano cambia la identidad de
+     categorias: sin esta guarda, cualquier re-render mientras el admin escribe
+     (p. ej. el aviso de pista a los 3 s) borraba lo tipeado y dejaba el botón
+     de guardar deshabilitado. */
+  const targetKey = initialData
+    ? (initialData.id_habitacion ?? `nueva:${initialData.coord_x},${initialData.coord_y}`)
+    : 'closed'
+  const lastTargetRef = useRef(null)
+
   useEffect(() => {
+    if (lastTargetRef.current === targetKey) return
+    lastTargetRef.current = targetKey
+
     setError('')
     if (initialData) {
       setNombre(initialData.nom_codigo || '')
@@ -28,7 +44,7 @@ export default function LocationForm({ isOpen, onClose, onSave, initialData, pis
       setEsConexion(false)
       setNomConexion('')
     }
-  }, [initialData, currentPiso?.id_piso, categorias])
+  }, [targetKey, initialData, currentPiso?.id_piso, categorias])
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault()
