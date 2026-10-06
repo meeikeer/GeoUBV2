@@ -111,55 +111,117 @@ console.log(`        ${zoom.steps} pasos de zoom, escala maxima ${zoom.max.toFix
 check('la ampliacion maxima no pasa de 3x', zoom.max <= 3.05,
   `${zoom.max.toFixed(2)}x (antes llegaba a 5.73x)`)
 
-console.log('\n=== 3. Iconos a zoom alto ===\n')
+console.log('\n=== 3. Iconos a distintos zooms ===\n')
 
-const icon = await page.evaluate(() => {
+const iconAt = () => page.evaluate(() => {
   const btn = document.querySelector('.marker-pin')
   const span = btn?.querySelector('span.mask-icon')
   if (!span) return null
   const r = span.getBoundingClientRect()
+  const readout = [...document.querySelectorAll('span')].find(s => /^\d+%$/.test(s.textContent.trim()))
   return {
-    css: Math.round(r.width),
     px: Math.round(r.width * window.devicePixelRatio),
     filter: getComputedStyle(btn).filter,
-    maskSize: getComputedStyle(span).maskSize || getComputedStyle(span).webkitMaskSize,
-    dpr: window.devicePixelRatio
+    zoom: readout ? parseInt(readout.textContent, 10) : null
   }
 })
 
-check('el icono no tiene filter (causa del pixelado)', icon.filter === 'none', icon.filter)
-check('el icono tiene resolucion real suficiente', icon.px >= 30,
-  `${icon.css}px css = ${icon.px}px reales a dpr${icon.dpr}`)
-check('la mascara se escala con contain', icon.maskSize === 'contain', icon.maskSize)
+const atCover = await iconAt()
+
+// Alejar al maximo: los marcadores deben mantener su tamano en pantalla
+for (let i = 0; i < 20; i++) {
+  await page.click('[aria-label="Alejar"]')
+  await page.waitForTimeout(90)
+}
+await page.waitForTimeout(700)
+const far = await iconAt()
+
+// Acercar al maximo
+for (let i = 0; i < 20; i++) {
+  await page.click('[aria-label="Acercar"]')
+  await page.waitForTimeout(90)
+}
+await page.waitForTimeout(700)
+const near = await iconAt()
+
+console.log(`        cover=${atCover.zoom}% icono=${atCover.px}px | ` +
+  `lejos=${far.zoom}% icono=${far.px}px | cerca=${near.zoom}% icono=${near.px}px`)
+
+check('el icono no tiene filter (causa del pixelado)', atCover.filter === 'none', atCover.filter)
+check('el icono se lee alejado', far.px >= 30, `${far.px}px reales a ${far.zoom}%`)
+check('el icono se lee cerca', near.px >= 30, `${near.px}px reales a ${near.zoom}%`)
+check('el tamaño se mantiene estable al zoom',
+  Math.max(atCover.px, far.px, near.px) / Math.min(atCover.px, far.px, near.px) < 1.6,
+  `rango ${Math.min(atCover.px, far.px, near.px)}-${Math.max(atCover.px, far.px, near.px)}px`)
+check('no hay aviso de lugares ocultos',
+  !(await page.locator('text=lugares más al acercar').count()), 'decluttering eliminado')
+
+console.log('\n=== 3b. Arrastre con raton ===\n')
+
+const before = await page.evaluate(() => {
+  const img = document.querySelector('#map-image')
+  const plane = img.closest('div[style*="translate"]')
+  const m = new DOMMatrixReadOnly(getComputedStyle(plane).transform)
+  return { x: Math.round(m.e), y: Math.round(m.f) }
+})
+
+const box = await (await page.$('#map-image')).boundingBox()
+const cx = box.x + box.width / 2
+const cy = box.y + box.height / 2
+
+await page.mouse.move(cx - 140, cy)
+await page.mouse.down()
+for (let i = 0; i < 20; i++) {
+  await page.mouse.move(cx - 140 + i * 12, cy + i * 4)
+  await page.waitForTimeout(16)
+}
+const during = await page.evaluate(() => {
+  const img = document.querySelector('#map-image')
+  const plane = img.closest('div[style*="translate"]')
+  const m = new DOMMatrixReadOnly(getComputedStyle(plane).transform)
+  return { x: Math.round(m.e), y: Math.round(m.f) }
+})
+await page.mouse.up()
+
+const moved = Math.hypot(during.x - before.x, during.y - before.y)
+check('el plano se mueve mientras se arrastra sin soltar', moved > 30,
+  `desplazamiento ${Math.round(moved)}px`)
 
 console.log('\n=== 4. Rendimiento ===\n')
 
 const stage = await page.$('#map-image')
-const box = await stage.boundingBox()
-const cx = box.x + box.width / 2
-const cy = box.y + box.height / 2
+const sbox = await stage.boundingBox()
+const sx = sbox.x + sbox.width / 2
+const sy = sbox.y + sbox.height / 2
 
 await page.evaluate(FRAME_PROBE)
-await page.mouse.move(cx - 130, cy)
+await page.mouse.move(sx - 130, sy)
 await page.mouse.down()
 for (let i = 0; i < 26; i++) {
-  await page.mouse.move(cx - 130 + i * 11, cy + Math.sin(i / 3) * 34)
+  await page.mouse.move(sx - 130 + i * 11, sy + Math.sin(i / 3) * 34)
   await page.waitForTimeout(12)
 }
+const dragMoving = await page.evaluate(() => {
+  const img = document.querySelector('#map-image')
+  const plane = img.closest('div[style*="translate"]')
+  const m = new DOMMatrixReadOnly(getComputedStyle(plane).transform)
+  return { frames: window.__frames, long: window.__long, x: Math.round(m.e), y: Math.round(m.f) }
+})
 await page.mouse.up()
-const drag = await page.evaluate(() => ({ frames: window.__frames, long: window.__long }))
-console.log(`        arrastre: ${drag.frames} frames, ${drag.long} largos (${pct(drag)}%)`)
+console.log(`        arrastre: ${dragMoving.frames} frames, ${dragMoving.long} largos (${pct(dragMoving)}%)`)
+check('el arrastre mueve el plano de verdad', Math.abs(dragMoving.x) > 30 || Math.abs(dragMoving.y) > 30,
+  `termino en ${dragMoving.x},${dragMoving.y}`)
 
 await page.evaluate(FRAME_PROBE)
 for (let i = 0; i < 12; i++) {
-  await page.mouse.move(cx, cy)
+  await page.mouse.move(sx, sy)
   await page.mouse.wheel(0, -120)
   await page.waitForTimeout(30)
 }
 const wheel = await page.evaluate(() => ({ frames: window.__frames, long: window.__long }))
 console.log(`        zoom rueda: ${wheel.frames} frames, ${wheel.long} largos (${pct(wheel)}%)`)
 
-check('el arrastre no acumula frames largos', drag.long / Math.max(1, drag.frames) < 0.25, pct(drag) + '%')
+check('el arrastre no acumula frames largos', dragMoving.long / Math.max(1, dragMoving.frames) < 0.25, pct(dragMoving) + '%')
 check('el zoom no acumula frames largos', wheel.long / Math.max(1, wheel.frames) < 0.25, pct(wheel) + '%')
 
 console.log('\n=== 5. Ruta y extremos retro ===\n')

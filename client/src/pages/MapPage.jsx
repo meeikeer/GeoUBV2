@@ -151,9 +151,37 @@ export default function MapPage() {
     )
   }, [data.allLocations, currentPisoId])
 
-  // Los marcadores se compensan del zoom para mantener tamaño constante en
-  // pantalla. El mínimo evita que se vuelvan diminutos al alejar.
-  const markerScale = Math.min(1, LABEL_ZOOM / Math.max(zoom, 0.01))
+  /* Los marcadores se compensan del zoom para mantener tamaño constante en
+     pantalla: scale = LABEL_ZOOM / zoom.
+
+     Antes llevaba Math.min(1, ...) y a partir de 1.2 de zoom dejaba de
+     compensar, así que al alejar el marcador se encogía con la vista y a zoom
+     0.26 quedaba en 7 px, ilegible. Sin ese tope el tamaño en pantalla es
+     siempre el mismo, tanto acercarse como alejar.
+
+     El resultado se cuantiza en pasos: un valor continuo cambiaría en cada
+     evento de rueda y re-renderizaría la capa de marcadores entera. Con 8
+     escalones el tamaño en pantalla va de 1 a 1.4 y React solo reacciona al
+     cruzar de escalón.
+
+     El tope de 6 es seguridad: a un zoom muy pequeño 1.2/0.01 daría 120×. */
+const MARKER_SCALE_CAP = 6
+const MARKER_SCALE_STEPS = 24
+
+/* Cuantiza dentro del rango real [0, CAP]. Limitar a [0, 1] reintroducia
+     justo el bug que se queria quitar: por debajo de 1.2 de zoom el valor
+     correcto es mayor que 1 (a 0.26 sale 4.6), y ahi es justo cuando el
+     marcador se encoge hasta ser ilegible. */
+function quantizeScale(value, steps, max) {
+  const clamped = Math.max(0, Math.min(max, value))
+  return Math.round(clamped * steps) / steps
+}
+
+const markerScale = quantizeScale(
+    LABEL_ZOOM / Math.max(zoom, 0.01),
+    MARKER_SCALE_STEPS,
+    MARKER_SCALE_CAP
+  )
   const showAllLabels = zoom >= LABEL_ZOOM
 
   const activeCategoria = activeMarker ? data.getCategoriaById(activeMarker.categoriaId) : null
@@ -367,7 +395,6 @@ export default function MapPage() {
           <MarkerLayer
             locations={mapLocations}
             getCategoria={data.getCategoriaById}
-            zoom={zoom}
             activeId={activeMarker?.id}
             selectedId={selectedDest?.id}
             scale={markerScale}

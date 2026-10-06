@@ -229,7 +229,12 @@ const framePoints = useCallback((points) => {
       const dx = targetRef.current.x - transformRef.current.x
       const dy = targetRef.current.y - transformRef.current.y
       const ds = targetRef.current.scale - transformRef.current.scale
+      /* Mientras se arrastra nunca se da por asentado. onMouseMove iguala
+         target y transform, asi que dx era 0 y el bucle se paraba en el primer
+         frame: el arrastre se quedaba sin nadie que aplicara el transform y el
+         mapa no se movia hasta el siguiente clic. */
       const settled =
+        !isDraggingRef.current &&
         Math.abs(dx) < 0.3 &&
         Math.abs(dy) < 0.3 &&
         Math.abs(ds) < 0.0005 &&
@@ -273,6 +278,7 @@ const framePoints = useCallback((points) => {
       const m = pointerFromCenter(e.clientX, e.clientY)
       const dx = m.x - lastPointerRef.current.x
       const dy = m.y - lastPointerRef.current.y
+      if (dx === 0 && dy === 0) return
       targetRef.current.x += dx
       targetRef.current.y += dy
       velocityRef.current = { x: dx, y: dy }
@@ -280,6 +286,9 @@ const framePoints = useCallback((points) => {
       constrain()
       transformRef.current.x = targetRef.current.x
       transformRef.current.y = targetRef.current.y
+      // El bucle es quien llama a applyTransform: sin esto el estado se
+      // actualiza pero el plano no se mueve.
+      startLoop()
     }
 
     const onMouseUp = () => {
