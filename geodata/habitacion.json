@@ -128,5 +128,15 @@
     "coord_y": 0.6782609283713334,
     "es_conexion": false,
     "nom_conexion": null
+  },
+  {
+    "id_habitacion": 14,
+    "nom_codigo": "Holaaaaa",
+    "id_categoria_fk": 1,
+    "id_piso_fk": 1,
+    "coord_x": 0.3290698601728512,
+    "coord_y": 0.6782728683217679,
+    "es_conexion": false,
+    "nom_conexion": null
   }
 ]
