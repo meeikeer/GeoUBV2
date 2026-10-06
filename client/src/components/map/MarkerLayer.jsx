@@ -58,11 +58,11 @@ export default function MarkerLayer({
                   e.stopPropagation()
                   onSelect(isActive ? null : item)
                 }}
-                className={`marker-pin chamfer-sm grid h-[clamp(22px,3vw,34px)] w-[clamp(22px,3vw,34px)] rotate-45 place-items-center text-brand-400 no-tap-highlight ${
+                className={`marker-pin chamfer-sm grid h-[clamp(26px,3.4vw,40px)] w-[clamp(26px,3.4vw,40px)] rotate-45 place-items-center text-brand-300 no-tap-highlight ${
                   isActive ? 'marker-active' : ''
                 } ${isSelected ? 'marker-selected' : ''}`}
               >
-                <AssetIcon name={icon.name} src={icon.src} className="h-[58%] w-[58%] -rotate-45" />
+                <AssetIcon name={icon.name} src={icon.src} className="h-[62%] w-[62%] -rotate-45" />
               </button>
 
               {(showAllLabels || isActive) && <span className="marker-label">{item.name}</span>}

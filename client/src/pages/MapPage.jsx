@@ -17,6 +17,7 @@ import MapErrorState from '../components/map/MapErrorState.jsx'
 import MapEmptyState from '../components/map/MapEmptyState.jsx'
 import MapControls from '../components/map/MapControls.jsx'
 import MarkerLayer from '../components/map/MarkerLayer.jsx'
+import RoutePulse from '../components/map/RoutePulse.jsx'
 import LocationCard from '../components/map/LocationCard.jsx'
 import RouteBanner from '../components/map/RouteBanner.jsx'
 import RoutePanel from '../components/map/RoutePanel.jsx'
@@ -344,6 +345,8 @@ export default function MapPage() {
           onImageLoad={handleImageLoad}
           addingMode={addingMode}
         >
+          <RoutePulse ends={ml.routeEnds} />
+
           <MarkerLayer
             locations={mapLocations}
             getCategoria={data.getCategoriaById}

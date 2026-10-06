@@ -84,8 +84,8 @@ export function useMapData() {
       save(await readRaw(), 'raw')
       setLoading(false)
       return
-    } catch (rawErr) {
-      // pasa a siguiente
+    } catch {
+      // sin red o sin el repo accesible: pasa a la siguiente fuente
     }
 
     if (isAuthenticated()) {

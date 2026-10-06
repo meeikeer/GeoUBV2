@@ -18,12 +18,22 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
   const targetRef = useRef({ x: 0, y: 0, scale: 1 })
   const velocityRef = useRef({ x: 0, y: 0 })
   const isDraggingRef = useRef(false)
+  const readyRef = useRef(false)
   const lastPointerRef = useRef({ x: 0, y: 0 })
   const rafRef = useRef(null)
   const limitsRef = useRef({ min: 0.1, max: 8, fit: 1, cover: 1 })
 
   const [zoom, setZoom] = useState(1)
   const [ready, setReady] = useState(false)
+
+  /* El zoom solo llega a React cuando cambia de forma visible. Durante un
+     arrastre o una ráfaga de eventos de rueda se publica redondeado: si no,
+     cada gesto re-renderiza MarkerLayer y todos sus marcadores con su estilo
+     inline de scale. */
+  const publishZoom = useCallback((value, force) => {
+    const bucket = Math.round(value * 50) / 50
+    setZoom(prev => (force || prev !== bucket ? bucket : prev))
+  }, [])
 
   const getStageRect = useCallback(() => {
     return containerRef?.current?.getBoundingClientRect() || null
@@ -49,16 +59,25 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     el.style.transform = `translate(-50%, -50%) translate3d(${x}px, ${y}px, 0) scale(${scale})`
   }, [planeRef])
 
-  // Limita el desplazamiento a lo que sobresale del escenario. Cuando la planta
-  // es mas pequena que el escenario, se recentra.
+  /* Limita el desplazamiento a lo que sobresale del escenario. Cuando la planta
+     es más pequeña que el escenario, se recentra.
+
+     Al pegarse al borde anula la velocidad de ese eje: si no, el arrastre sigue
+     empujando contra el tope y el plano se engancha y vuelve. */
   const constrain = useCallback(() => {
     const rect = getStageRect()
     if (!rect) return
     const { w, h } = getPlaneSize()
     const scale = targetRef.current.scale
     const limits = panLimits(rect.width, rect.height, w, h, scale)
-    targetRef.current.x = clamp(targetRef.current.x, -limits.x, limits.x)
-    targetRef.current.y = clamp(targetRef.current.y, -limits.y, limits.y)
+
+    const x = clamp(targetRef.current.x, -limits.x, limits.x)
+    if (x !== targetRef.current.x) velocityRef.current.x = 0
+    targetRef.current.x = x
+
+    const y = clamp(targetRef.current.y, -limits.y, limits.y)
+    if (y !== targetRef.current.y) velocityRef.current.y = 0
+    targetRef.current.y = y
   }, [getStageRect, getPlaneSize])
 
   const setFraming = useCallback((scale) => {
@@ -66,9 +85,10 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     velocityRef.current = { x: 0, y: 0 }
     transformRef.current = { ...targetRef.current }
     applyTransform()
-    setZoom(scale)
+    publishZoom(scale, true)
+    readyRef.current = true
     setReady(true)
-  }, [applyTransform])
+  }, [applyTransform, publishZoom])
 
   // Planta completa a la vista.
   const fitToScreen = useCallback(() => {
@@ -95,8 +115,8 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     targetRef.current.x = centerX - (centerX - targetRef.current.x) * ratio
     targetRef.current.y = centerY - (centerY - targetRef.current.y) * ratio
     constrain()
-    setZoom(newScale)
-  }, [constrain])
+    publishZoom(newScale)
+  }, [constrain, publishZoom])
 
   const zoomIn = useCallback(() => zoomToPoint(1 + ZOOM_STEP, 0, 0), [zoomToPoint])
   const zoomOut = useCallback(() => zoomToPoint(1 / (1 + ZOOM_STEP), 0, 0), [zoomToPoint])
@@ -113,8 +133,8 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     targetRef.current.y = centerY - (ny * h) * scale
     velocityRef.current = { x: 0, y: 0 }
     constrain()
-    setZoom(scale)
-  }, [getPlaneSize, getStageRect, constrain])
+    publishZoom(scale, true)
+  }, [getPlaneSize, getStageRect, constrain, publishZoom])
 
   const nudge = useCallback((dx, dy) => {
     targetRef.current.x += dx
@@ -302,7 +322,9 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
         const scales = readScales()
         if (!scales) return
         const prev = limitsRef.current
-        const keepUserZoom = ready && targetRef.current.scale > prev.min + 0.001
+        // readyRef y no ready: `ready` estaba entre las dependencias del efecto, y al
+        // pasar a true obligaba a registrar todos los listeners otra vez.
+        const keepUserZoom = readyRef.current && targetRef.current.scale > prev.min + 0.001
         const scale = keepUserZoom
           ? clamp(targetRef.current.scale, scales.contain, scales.max)
           : scales.cover
@@ -317,7 +339,7 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
         velocityRef.current = { x: 0, y: 0 }
         transformRef.current = { ...targetRef.current }
         applyTransform()
-        setZoom(scale)
+        publishZoom(scale, true)
       }, RESIZE_DEBOUNCE)
     }
 
@@ -342,7 +364,7 @@ export function usePanZoom({ containerRef, planeRef, reducedMotion }) {
     }
   }, [
     containerRef, planeRef, zoomToPoint, zoomIn, zoomOut, fitToScreen,
-    nudge, constrain, applyTransform, readScales, ready, reducedMotion
+    nudge, constrain, applyTransform, readScales, publishZoom, reducedMotion
   ])
 
   return { zoom, ready, zoomIn, zoomOut, fitToScreen, resetToCover, centerOn, limits: limitsRef }

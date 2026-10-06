@@ -394,29 +394,28 @@ select.field option {
   display: grid;
   place-items: center;
   background-image: linear-gradient(150deg, var(--color-ink-700), var(--color-ink-850));
-  border: 1px solid var(--line-strong);
+  border: 1px solid rgba(255, 255, 255, 0.42);
   transition:
     border-color 0.2s ease,
-    filter 0.2s ease,
+    background-image 0.2s ease,
     transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* El halo del marcador va con filter: drop-shadow y no con box-shadow:
-   el clip-path del chaflan recorta el box-shadow y el anillo de separación
-   desaparecia sobre el plano blanco. */
-.marker-pin {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
-}
+/* El marcador no lleva filter a propósito. Un filtro obliga al navegador a
+   rasterizar el subárbol entero en una textura propia y, combinado con el
+   rotate-45 y el scale() anidado, elegía una resolución baja: los iconos salían
+   como bloques de 4×4 px al acercar. La separación sobre el plano blanco la da
+   un borde claro interior, que el clip-path del chaflán no recorta. */
 
 .marker-active {
   border-color: var(--color-brand-400);
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 10px rgba(245, 158, 11, 0.55));
+  background-image: linear-gradient(150deg, #3a3020, #1c1a14);
 }
 
 /* Marcador que es el destino de la ruta activa */
 .marker-selected {
   border-color: var(--color-signal-400);
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 10px rgba(45, 212, 191, 0.5));
+  background-image: linear-gradient(150deg, #16332f, #10201f);
 }
 
 /* Etiqueta flotante del marcador */
@@ -497,6 +496,36 @@ select.field option {
 .animate-sheet-up { animation: sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-slide-in-right { animation: slide-in-right 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-breathe { animation: breathe 1.8s ease-in-out infinite; }
+
+/* ============================================================
+   Extremos de la ruta — animación retro (a saltos, no fluida)
+   ============================================================ */
+@keyframes route-ping {
+  0%   { transform: scale(0.35); opacity: 0.95; }
+  100% { transform: scale(2.8);  opacity: 0; }
+}
+
+@keyframes route-blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0.2; }
+}
+
+/* steps() en vez de interpolación: el salto a saltos es el efecto retro, y
+   además es barato porque no interpola propiedades por frame. */
+.route-ping {
+  animation: route-ping 1.5s steps(4, jump-none) infinite;
+}
+
+.route-blink {
+  animation: route-blink 0.9s steps(1, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* El blanket de arriba deja la animación en su estado final, que para el ping
+     es invisible. Se fija el estado inicial para que se vean los dos. */
+  .route-ping { animation: none; opacity: 0.9; transform: scale(0.6); }
+  .route-blink { animation: none; opacity: 1; }
+}
 
 /* Barrido de escaneo del worker */
 .scan-line {

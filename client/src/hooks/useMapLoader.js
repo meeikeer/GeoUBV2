@@ -15,6 +15,7 @@ export function useMapLoader() {
   const [mapLoaded, setMapLoaded] = useState(false)
   const [loadError, setLoadError] = useState(null)
   const [attempt, setAttempt] = useState(0)
+  const [routeEnds, setRouteEnds] = useState(null) // Extremos del tramo en coords 0-1
   const workerRef = useRef(null)     // Web Worker que escanea el PNG
   const lastRequestRef = useRef(null)
 
@@ -384,74 +385,64 @@ export function useMapLoader() {
     const xRef = pRef.x * TILE + TILE / 2
     const yRef = pRef.y * TILE + TILE / 2
     const angle = Math.atan2(yDest - yRef, xDest - xRef)
-    let dashOffset = 0
 
-    // Trazo en la paleta del proyecto: la ruta es teal (btn-signal), con un
-    // halo oscuro debajo para que se lea tanto sobre el plano blanco como
-    // sobre los rellenos oscuros de la planta.
+    /* Trazo en la paleta del proyecto: la ruta es teal (btn-signal), con un
+       halo oscuro debajo para que se lea tanto sobre el plano blanco como sobre
+       los rellenos oscuros de la planta.
+
+       El trazo se dibuja UNA vez. Antes se redibujaba en un bucle de
+       requestAnimationFrame infinito (dos pasadas de polilínea por frame) sobre
+       un canvas que el compositor reescala a miles de píxeles: eso invalidaba el
+       plano en cada frame y el arrastre se trababa. La animación vive ahora en
+       los dos extremos (RoutePulse), que son elementos DOM pequeños. */
     const ROUTE = '#2dd4bf'
     const HALO = 'rgba(8, 9, 13, 0.55)'
-    const motionOff =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      const trace = () => {
-        ctx.beginPath()
-        ctx.moveTo(path[path.length - 1].x * TILE + TILE / 2, path[path.length - 1].y * TILE + TILE / 2)
-        for (let i = path.length - 2; i >= 0; i--) {
-          ctx.lineTo(path[i].x * TILE + TILE / 2, path[i].y * TILE + TILE / 2)
-        }
-        ctx.stroke()
-      }
-
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
-      ctx.setLineDash([])
-
-      // Halo: mismo trazo más ancho en oscuro, para separar del plano
-      ctx.strokeStyle = HALO
-      ctx.lineWidth = 11
-      trace()
-
-      ctx.strokeStyle = ROUTE
-      ctx.lineWidth = 6
-      if (!motionOff) {
-        ctx.setLineDash([14, 10])
-        ctx.lineDashOffset = -dashOffset
-      }
-      trace()
-      ctx.setLineDash([])
-      ctx.lineDashOffset = 0
-
-      // Punta de flecha en el destino
-      ctx.fillStyle = ROUTE
-      ctx.save()
-      ctx.translate(xDest, yDest)
-      ctx.rotate(angle)
+    const trace = () => {
       ctx.beginPath()
-      ctx.moveTo(0, 0)
-      ctx.lineTo(-18, -10)
-      ctx.lineTo(-18, 10)
-      ctx.closePath()
-      ctx.fill()
-      ctx.restore()
+      ctx.moveTo(path[path.length - 1].x * TILE + TILE / 2, path[path.length - 1].y * TILE + TILE / 2)
+      for (let i = path.length - 2; i >= 0; i--) {
+        ctx.lineTo(path[i].x * TILE + TILE / 2, path[i].y * TILE + TILE / 2)
+      }
+      ctx.stroke()
     }
 
-    if (motionOff) {
-      draw()
-      return { ok: true, ...measurePath(path) }
-    }
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.setLineDash([])
 
-    const animate = () => {
-      draw()
-      dashOffset += 0.8
-      if (dashOffset > 24) dashOffset = 0
-      animRef.current = requestAnimationFrame(animate)
+    // Halo: mismo trazo más ancho en oscuro, para separar del plano
+    ctx.strokeStyle = HALO
+    ctx.lineWidth = 11
+    trace()
+
+    ctx.strokeStyle = ROUTE
+    ctx.lineWidth = 6
+    trace()
+
+    // Punta de flecha fija en el destino; el galope animado va en el DOM
+    ctx.fillStyle = ROUTE
+    ctx.save()
+    ctx.translate(xDest, yDest)
+    ctx.rotate(angle)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(-18, -10)
+    ctx.lineTo(-18, 10)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+
+    // Extremos en coordenadas normalizadas, para el pulso del DOM
+    const toNorm = c => {
+      const cx = Array.isArray(c) ? c[0] : c.x
+      const cy = Array.isArray(c) ? c[1] : c.y
+      return [cx / canvas.width, cy / canvas.height]
     }
-    animate()
+    setRouteEnds({ from: toNorm(startCoords), to: toNorm(endCoords), angle })
+
     return { ok: true, ...measurePath(path) }
   }, [aStar, getCtx, measurePath])
 
@@ -461,6 +452,7 @@ export function useMapLoader() {
       cancelAnimationFrame(animRef.current)
       animRef.current = null
     }
+    setRouteEnds(null)
     const ctx = getCtx()
     const canvas = canvasRef.current
     if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -481,6 +473,7 @@ export function useMapLoader() {
     loadError,
     retry,
     attempt,
+    routeEnds,
     loadMap,
     drawRoute,
     clearRoute

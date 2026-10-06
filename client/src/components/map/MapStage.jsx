@@ -49,7 +49,14 @@ const MapStage = forwardRef(function MapStage(
             width={intrinsic?.w || undefined}
             height={intrinsic?.h || undefined}
             className="block h-auto w-full"
-            style={intrinsic ? { aspectRatio: `${intrinsic.w} / ${intrinsic.h}` } : undefined}
+            style={{
+              ...(intrinsic ? { aspectRatio: `${intrinsic.w} / ${intrinsic.h}` } : null),
+              /* El PNG es un plano de líneas de 1 px y se muestra bastante por
+                 encima de su tamaño natural. Reescalado se ve borroso; con
+                 pixelated los bloques quedan nítidos y el plano se lee como un
+                 zoom de CAD. */
+              imageRendering: 'pixelated'
+            }}
             onLoad={onImageLoad}
           />
 
