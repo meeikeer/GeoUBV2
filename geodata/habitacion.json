@@ -41,7 +41,7 @@
   },
   {
     "id_habitacion": 5,
-    "nom_codigo": "Baño Hombres",
+    "nom_codigo": "BaÃ±o Hombres",
     "coord_x": 0.5795833814074618,
     "coord_y": 0.41678224687933424,
     "id_piso_fk": 2,
@@ -61,7 +61,7 @@
   },
   {
     "id_habitacion": 7,
-    "nom_codigo": "Baño Mujeres",
+    "nom_codigo": "BaÃ±o Mujeres",
     "coord_x": 0.41017043343992743,
     "coord_y": 0.4128195238012024,
     "id_piso_fk": 2,
@@ -111,11 +111,21 @@
   },
   {
     "id_habitacion": 12,
-    "nom_codigo": "Habitaci�n TEST",
+    "nom_codigo": "Habitación TEST",
     "id_categoria_fk": 1,
     "id_piso_fk": 1,
     "coord_x": 0.5173814559204085,
     "coord_y": 0.6782609438758712,
+    "es_conexion": false,
+    "nom_conexion": null
+  },
+  {
+    "id_habitacion": 13,
+    "nom_codigo": "Oficina 123",
+    "id_categoria_fk": 12,
+    "id_piso_fk": 1,
+    "coord_x": 0.41094816721930666,
+    "coord_y": 0.6782609283713334,
     "es_conexion": false,
     "nom_conexion": null
   }
