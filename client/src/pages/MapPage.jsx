@@ -23,6 +23,8 @@ import RouteBanner from '../components/map/RouteBanner.jsx'
 import RoutePanel from '../components/map/RoutePanel.jsx'
 import AdminToolbar from '../components/map/AdminToolbar.jsx'
 import AdminPanel from '../components/map/AdminPanel.jsx'
+import AdminPreviewDock from '../components/map/AdminPreviewDock.jsx'
+import PreviewOverlay from '../components/map/PreviewOverlay.jsx'
 import LocationForm from '../components/map/LocationForm.jsx'
 import AdminOfflineOverlay from '../components/map/AdminOfflineOverlay.jsx'
 import OnboardingOverlay from '../components/map/OnboardingOverlay.jsx'
@@ -69,6 +71,15 @@ export default function MapPage() {
   const [formCoords, setFormCoords] = useState(null)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
 
+  /* Preview de cambios: el cambio se etapa aquí y NO se escribe hasta que el
+     admin pulsa Publicar en el dock. Un solo borrador activo (el último gana). */
+  const [stagedChange, setStagedChange] = useState(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewView, setPreviewView] = useState('map')
+  const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState('')
+  const pendingFrameRef = useRef(null)
+
   const data = useMapData()
   const fm = useFloorManager(data.pisos)
   const ml = useMapLoader()
@@ -107,9 +118,15 @@ export default function MapPage() {
   }, [currentMapUrl, fm.currentPiso?.id_piso])
 
   // Encuadre inicial: la planta llena el escenario una vez que la imagen tiene
-  // tamaño medible.
+  // tamaño medible. Si hay un preview etapado en otra planta, su encuadre va
+  // justo después: cover del onLoad lo pisaría si se pidiera antes.
   const handleImageLoad = useCallback(() => {
     panZoom.resetToCover()
+    const pending = pendingFrameRef.current
+    if (pending) {
+      pendingFrameRef.current = null
+      panZoom.framePoints([pending])
+    }
   }, [panZoom])
 
   /* ---------------- rutas ---------------- */
@@ -290,6 +307,8 @@ const markerScale = quantizeScale(
         setIsAdmin(false)
         setAddingMode(false)
         setListOpen(false)
+        setStagedChange(null)
+        setPreviewOpen(false)
       }
     })
     return () => { cancelled = true }
@@ -300,6 +319,8 @@ const markerScale = quantizeScale(
     setIsAdmin(false)
     setAddingMode(false)
     setPinCoords(null)
+    setStagedChange(null)
+    setPreviewOpen(false)
     window.location.reload()
   }, [])
 
@@ -345,28 +366,98 @@ const markerScale = quantizeScale(
     setFormOpen(true)
   }, [])
 
-  const handleDelete = useCallback(async (item) => {
-    if (!window.confirm(`¿Eliminar "${item.nom_codigo}"?`)) return
-    try {
-      await crud.remove('habitacion', item.id_habitacion)
-      loadLocations()
-      await data.refreshMapData({ silent: true })
-      toast.success('Ubicación eliminada')
-    } catch {
-      toast.warning('No se pudo eliminar la ubicación')
-    }
-  }, [loadLocations, data, toast])
-
-  const handleSaveLocation = useCallback(async (body, isEditing) => {
-    if (isEditing) await crud.update('habitacion', body.id_habitacion, body)
-    else await crud.insert('habitacion', body)
-
-    setPinCoords(null)
+  /* Etapa un cambio en vez de escribirlo: el dock de preview enseña qué va a
+     pasar (mapa o JSON) y la escritura real ocurre en handlePublish, con los
+     mismos crud.* de siempre. */
+  const handleStageChange = useCallback((change) => {
+    setFormOpen(false)
+    setEditTarget(null)
+    setFormCoords(null)
+    setListOpen(false)
     setAddingMode(false)
-    if (listOpen) loadLocations()
-    await data.refreshMapData({ silent: true })
-    toast.success(isEditing ? 'Ubicación actualizada' : 'Ubicación creada')
-  }, [listOpen, loadLocations, data, toast])
+    setPinCoords(null)
+    setPublishError('')
+    setPreviewView('map')
+    setPreviewOpen(true)
+    if (stagedChange) toast.info('Se reemplazó el borrador anterior')
+    setStagedChange(change)
+
+    // La preview visual solo tiene sentido viendo la planta donde ocurrirá.
+    if (change.entity === 'habitacion') {
+      const rec = change.op === 'delete' ? change.before : change.body
+      const targetPisoId = rec?.id_piso_fk
+      const coords = [rec?.coord_x, rec?.coord_y]
+      if (targetPisoId && targetPisoId !== currentPisoId) {
+        pendingFrameRef.current = coords
+        fm.setFloor(targetPisoId)
+      } else if (Number.isFinite(coords[0]) && Number.isFinite(coords[1])) {
+        panZoom.framePoints([coords])
+      }
+    }
+  }, [stagedChange, toast, currentPisoId, fm, panZoom])
+
+  const handleDelete = useCallback((item) => {
+    handleStageChange({
+      entity: 'habitacion',
+      op: 'delete',
+      id: item.id_habitacion,
+      body: null,
+      before: item
+    })
+  }, [handleStageChange])
+
+  const handleSaveLocation = useCallback((body, isEditing) => {
+    handleStageChange({
+      entity: 'habitacion',
+      op: isEditing ? 'update' : 'create',
+      id: isEditing ? body.id_habitacion : null,
+      body,
+      before: isEditing ? editTarget : null
+    })
+  }, [editTarget, handleStageChange])
+
+  /* Publica el borrador: única vía de escritura del flujo de preview. Mismos
+     crud.* que antes, mismas lecturas posteriores. */
+  const handlePublish = useCallback(async () => {
+    const change = stagedChange
+    if (!change || publishing) return
+    setPublishing(true)
+    setPublishError('')
+    try {
+      const { entity, op, id, body } = change
+      if (op === 'create') await crud.insert(entity, body)
+      else if (op === 'update') await crud.update(entity, id, body)
+      else await crud.remove(entity, id)
+
+      if (entity === 'habitacion') await loadLocations()
+      await data.refreshMapData({ silent: true })
+      setStagedChange(null)
+      setPreviewOpen(false)
+      toast.success('Cambio publicado')
+    } catch (err) {
+      // El borrador se conserva: el admin puede reintentar o descartar.
+      setPublishError(err?.message || 'No se pudo publicar el cambio')
+      toast.warning('No se pudo publicar el cambio')
+    } finally {
+      setPublishing(false)
+    }
+  }, [stagedChange, publishing, loadLocations, data, toast])
+
+  const handleDiscard = useCallback(() => {
+    setStagedChange(null)
+    setPreviewOpen(false)
+    setPublishError('')
+    toast.info('Cambio descartado')
+  }, [toast])
+
+  const handleGoToFloor = useCallback((pisoId, coords) => {
+    if (pisoId !== currentPisoId) {
+      pendingFrameRef.current = coords
+      fm.setFloor(pisoId)
+    } else if (coords && Number.isFinite(coords[0]) && Number.isFinite(coords[1])) {
+      panZoom.framePoints([coords])
+    }
+  }, [currentPisoId, fm, panZoom])
 
   /* ---------------- estados de pantalla ---------------- */
 
@@ -470,6 +561,18 @@ const markerScale = quantizeScale(
               </div>
             </div>
           )}
+
+          {isAdmin && (
+            <PreviewOverlay
+              isOpen={previewOpen && Boolean(stagedChange)}
+              view={previewView}
+              change={stagedChange}
+              currentPisoId={currentPisoId}
+              locations={mapLocations}
+              categorias={data.categorias}
+              scale={markerScale}
+            />
+          )}
         </MapStage>
 
         {showEmpty && (
@@ -505,6 +608,7 @@ const markerScale = quantizeScale(
           onZoomIn={panZoom.zoomIn}
           onZoomOut={panZoom.zoomOut}
           onFit={panZoom.fitToScreen}
+          className={previewOpen && stagedChange ? 'max-sm:hidden sm:right-[432px]' : ''}
         />
 
         {isAdmin && (
@@ -513,7 +617,27 @@ const markerScale = quantizeScale(
             addingMode={addingMode}
             onToggleAdd={handleToggleAdd}
             onOpenList={handleOpenList}
+            hasDraft={Boolean(stagedChange)}
+            previewOpen={previewOpen}
+            onOpenPreview={() => setPreviewOpen(o => !o)}
             onLogout={handleLogout}
+          />
+        )}
+
+        {isAdmin && (
+          <AdminPreviewDock
+            isOpen={previewOpen && Boolean(stagedChange)}
+            onClose={() => setPreviewOpen(false)}
+            change={stagedChange}
+            view={previewView}
+            onViewChange={setPreviewView}
+            onPublish={handlePublish}
+            onDiscard={handleDiscard}
+            publishing={publishing}
+            publishError={publishError}
+            data={data}
+            currentPiso={fm.currentPiso}
+            onGoToFloor={handleGoToFloor}
           />
         )}
       </main>
@@ -556,6 +680,7 @@ const markerScale = quantizeScale(
         edificios={data.edificios}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onStageChange={handleStageChange}
         loading={locationLoading}
       />
 

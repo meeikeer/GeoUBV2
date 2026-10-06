@@ -63,7 +63,7 @@ function EmptyState({ text }) {
   )
 }
 
-function TabEdificios({ onStatusMsg, sedes }) {
+function TabEdificios({ sedes, onStageChange }) {
   const [items, setItems] = useState([])
   const [form, setForm] = useState(null)
   const [editId, setEditId] = useState(null)
@@ -94,28 +94,27 @@ function TabEdificios({ onStatusMsg, sedes }) {
     setSedeFk(item.id_sede_fk)
   }
 
-  const handleSave = async () => {
+  // Se etapa en vez de escribir: el dock de preview pide confirmación.
+  const handleSave = () => {
     if (!nom.trim()) return
-    try {
-      const body = { nom_edificio: nom.trim(), id_sede_fk: sedeFk }
-      if (form === 'edit') {
-        await crud.update('edificio', editId, body)
-      } else {
-        await crud.insert('edificio', body)
-      }
-      onStatusMsg(form === 'edit' ? 'Edificio actualizado' : 'Edificio creado')
-      setForm(null)
-      load()
-    } catch {}
+    const body = { nom_edificio: nom.trim(), id_sede_fk: sedeFk }
+    onStageChange({
+      entity: 'edificio',
+      op: form === 'edit' ? 'update' : 'create',
+      id: form === 'edit' ? editId : null,
+      body,
+      before: form === 'edit' ? items.find(i => i.id_edificio === editId) || null : null
+    })
   }
 
-  const handleDelete = async (item) => {
-    if (!window.confirm(`¿Eliminar "${item.nom_edificio}"?`)) return
-    try {
-      await crud.remove('edificio', item.id_edificio)
-      onStatusMsg('Edificio eliminado')
-      load()
-    } catch {}
+  const handleDelete = (item) => {
+    onStageChange({
+      entity: 'edificio',
+      op: 'delete',
+      id: item.id_edificio,
+      body: null,
+      before: item
+    })
   }
 
   if (form)
@@ -161,7 +160,7 @@ function TabEdificios({ onStatusMsg, sedes }) {
   )
 }
 
-function TabPisos({ onStatusMsg, edificios }) {
+function TabPisos({ onStatusMsg, edificios, onStageChange }) {
   const [items, setItems] = useState([])
   const [form, setForm] = useState(null)
   const [editId, setEditId] = useState(null)
@@ -201,40 +200,32 @@ function TabPisos({ onStatusMsg, edificios }) {
     setEdifFk(item.id_edificio_fk)
   }
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!nomPiso.trim()) return
     // Sin url_map el piso nace sin planta: useMapLoader no tiene imagen que
-    // cargar y el piso queda inservible, así que no se deja guardar.
+    // cargar y el piso queda inservible, así que no se deja etapar.
     if (!urlMap.trim()) {
       onStatusMsg('Falta la ruta del mapa del piso')
       return
     }
-    try {
-      const body = {
-        num_piso: parseInt(numPiso) || 0,
-        display: display.trim() || String(parseInt(numPiso) || 0),
-        nom_piso: nomPiso.trim(),
-        url_map: urlMap.trim(),
-        id_edificio_fk: edifFk
-      }
-      if (form === 'edit') {
-        await crud.update('piso', editId, body)
-      } else {
-        await crud.insert('piso', body)
-      }
-      onStatusMsg(form === 'edit' ? 'Piso actualizado' : 'Piso creado')
-      setForm(null)
-      load()
-    } catch {}
+    const body = {
+      num_piso: parseInt(numPiso) || 0,
+      display: display.trim() || String(parseInt(numPiso) || 0),
+      nom_piso: nomPiso.trim(),
+      url_map: urlMap.trim(),
+      id_edificio_fk: edifFk
+    }
+    onStageChange({
+      entity: 'piso',
+      op: form === 'edit' ? 'update' : 'create',
+      id: form === 'edit' ? editId : null,
+      body,
+      before: form === 'edit' ? items.find(i => i.id_piso === editId) || null : null
+    })
   }
 
-  const handleDelete = async (item) => {
-    if (!window.confirm(`¿Eliminar "${item.nom_piso}"?`)) return
-    try {
-      await crud.remove('piso', item.id_piso)
-      onStatusMsg('Piso eliminado')
-      load()
-    } catch {}
+  const handleDelete = (item) => {
+    onStageChange({ entity: 'piso', op: 'delete', id: item.id_piso, body: null, before: item })
   }
 
   if (form)
@@ -317,7 +308,7 @@ function TabPisos({ onStatusMsg, edificios }) {
   )
 }
 
-function TabCategorias({ onStatusMsg }) {
+function TabCategorias({ onStageChange }) {
   const [items, setItems] = useState([])
   const [form, setForm] = useState(null)
   const [editId, setEditId] = useState(null)
@@ -348,28 +339,26 @@ function TabCategorias({ onStatusMsg }) {
     setUrlIcono(item.url_icono || '')
   }
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!nom.trim()) return
-    try {
-      const body = { nom_categoria: nom.trim(), url_icono: urlIcono.trim() || null }
-      if (form === 'edit') {
-        await crud.update('categoria', editId, body)
-      } else {
-        await crud.insert('categoria', body)
-      }
-      onStatusMsg(form === 'edit' ? 'Categoría actualizada' : 'Categoría creada')
-      setForm(null)
-      load()
-    } catch {}
+    const body = { nom_categoria: nom.trim(), url_icono: urlIcono.trim() || null }
+    onStageChange({
+      entity: 'categoria',
+      op: form === 'edit' ? 'update' : 'create',
+      id: form === 'edit' ? editId : null,
+      body,
+      before: form === 'edit' ? items.find(i => i.id_categoria === editId) || null : null
+    })
   }
 
-  const handleDelete = async (item) => {
-    if (!window.confirm(`¿Eliminar categoría "${item.nom_categoria}"?`)) return
-    try {
-      await crud.remove('categoria', item.id_categoria)
-      onStatusMsg('Categoría eliminada')
-      load()
-    } catch {}
+  const handleDelete = (item) => {
+    onStageChange({
+      entity: 'categoria',
+      op: 'delete',
+      id: item.id_categoria,
+      body: null,
+      before: item
+    })
   }
 
   if (form)
@@ -418,6 +407,7 @@ export default function AdminPanel({
   habitaciones,
   onEdit,
   onDelete,
+  onStageChange,
   loading,
   categorias,
   sedes,
@@ -502,12 +492,16 @@ export default function AdminPanel({
 
         <div className="space-y-4 p-3 sm:p-4">
           {activeTab === 'edificios' && (
-            <TabEdificios onStatusMsg={setStatusMsg} sedes={sedes} />
+            <TabEdificios sedes={sedes} onStageChange={onStageChange} />
           )}
           {activeTab === 'pisos' && (
-            <TabPisos onStatusMsg={setStatusMsg} edificios={edificios} />
+            <TabPisos
+              onStatusMsg={setStatusMsg}
+              edificios={edificios}
+              onStageChange={onStageChange}
+            />
           )}
-          {activeTab === 'categorias' && <TabCategorias onStatusMsg={setStatusMsg} />}
+          {activeTab === 'categorias' && <TabCategorias onStageChange={onStageChange} />}
           {activeTab === 'habitaciones' &&
             (loading ? (
               <div className="py-8 text-center text-xs text-slate-500">Cargando…</div>
