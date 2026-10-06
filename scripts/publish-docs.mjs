@@ -20,21 +20,21 @@ function copyDir(src, dest) {
   }
 }
 
-function rmDir(dir) {
-  if (!fs.existsSync(dir)) return
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      rmDir(p)
-      fs.rmdirSync(p)
-    } else {
-      fs.unlinkSync(p)
-    }
-  }
-  fs.rmdirSync(dir)
-}
+/* rmSync recursivo en vez de un rmDir a mano: la version anterior recorria el
+   arbol y hacia rmdirSync de cada subcarpeta, y en Windows fallaba con ENOENT
+   al llegar a docs/assets/icons, dejando docs/ a medias. rmSync es atomico y
+   tolera el orden de borrado. */
+/* CNAME vive en docs/ pero no en client/dist/: si se borra con el resto, cada
+   deploy deja al sitio sin dominio personalizado. Se lee antes de limpiar y se
+   vuelve a escribir despues. */
+const cnamePath = path.join(DOCS, 'CNAME')
+const cname = fs.existsSync(cnamePath) ? fs.readFileSync(cnamePath, 'utf8') : null
 
-rmDir(DOCS)
+fs.rmSync(DOCS, { recursive: true, force: true })
 copyDir(DIST, DOCS)
+
+if (cname !== null) {
+  fs.writeFileSync(cnamePath, cname)
+}
 fs.writeFileSync(path.join(DOCS, '.nojekyll'), '')
 console.log('publish-docs: docs/ actualizado desde client/dist/')
