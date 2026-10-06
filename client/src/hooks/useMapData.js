@@ -6,7 +6,9 @@ import { normalizeMapData } from '../lib/mapDataShape.js'
 import { assetUrl } from '../lib/assets.js'
 import { buildMapData } from '../lib/buildMapData.js'
 
-const CACHE_KEY = 'geoubv_mapdata'
+// v2: la caché previa guardaba texto corrompido (Ã± / U+FFFD) escrito con
+// btoa/atob en Latin-1, así que se invalida en vez de reutilizarla.
+const CACHE_KEY = 'geoubv_mapdata_v2'
 const BUNDLE_URL = assetUrl('mapdata.json')
 
 /* Carga de datos del mapa, en cascada y tolerante a fallos.

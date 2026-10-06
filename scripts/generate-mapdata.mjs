@@ -24,7 +24,19 @@ function readCollection(name) {
     console.warn(`  aviso: no existe ${name}.json, se usa []`)
     return []
   }
-  const raw = fs.readFileSync(file, 'utf8').trim()
+  // Decodificación estricta: si el JSON no es UTF-8 válido (p. ej. una ñ
+  // escrita como el byte Latin-1 0xF1 por btoa), el script aborta aquí en vez
+  // de colar caracteres U+FFFD al bundle.
+  const bytes = fs.readFileSync(file)
+  let raw
+  try {
+    raw = new TextDecoder('utf-8', { fatal: true }).decode(bytes).trim()
+  } catch {
+    throw new Error(
+      `${name}.json no es UTF-8 válido: contiene bytes sueltos de acentos o Ñ. ` +
+      'Hay que reparar el fichero en geodata/ antes de generar el bundle.'
+    )
+  }
   if (!raw || raw === '[]') return []
   const parsed = JSON.parse(raw)
   if (!Array.isArray(parsed)) {

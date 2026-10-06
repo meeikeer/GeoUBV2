@@ -44,8 +44,11 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 - `MapPage` revalida el token al montar: si caducó, limpia la sesión y oculta la UI admin.
 
 ## CRUD GitHub Contents
-- Lectura: `GET /repos/{owner}/{repo}/contents/geodata/{archivo}.json` → `{content: "<base64>", sha}` → `atob(content)` + `JSON.parse()`.
-- Escritura: `PUT` misma ruta, body `{message, content: btoa(JSON.stringify(data, null, 2)), sha}`.
+- Lectura: `GET /repos/{owner}/{repo}/contents/geodata/{archivo}.json` → `{content: "<base64>", sha}` → decode UTF-8 (`TextDecoder`) + `JSON.parse()`.
+- Escritura: `PUT` misma ruta, body `{message, content: base64UTF8(JSON.stringify(data, null, 2)), sha}`.
+- El base64 va **siempre** por UTF-8 (`encodeText`/`decodeText` en `github.js`):
+  `btoa`/`atob` son Latin-1 y dejaban el JSON del repo como UTF-8 inválido
+  (ñ como byte `0xF1`), lo que se rompía en cada lectura posterior.
 - El `sha` obliga a leer justo antes de escribir: si el archivo cambió, GitHub rechaza el `PUT`.
 - Cada `PUT` genera un commit. El admin edita por interfaz, nunca el JSON a mano.
 - `mapdata.json` se genera **antes del deploy**, no en runtime.

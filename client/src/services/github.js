@@ -38,12 +38,31 @@ export async function githubFetch(path, options = {}, token = null) {
   return res
 }
 
+/* base64 <-> texto pasando por bytes UTF-8.
+
+   btoa/atob son de 1 byte por carácter (Latin-1): btoa escribía la ñ como el
+   byte suelto 0xF1 y dejaba el JSON del repo como UTF-8 inválido, y atob leía
+   los bytes UTF-8 de GitHub uno a uno y daba mojibake ("BaÃ±o"). Con
+   TextEncoder/TextDecoder el contenido que viaja por la Contents API es UTF-8
+   de verdad, igual que el fichero en el repo. */
+function encodeText(text) {
+  const bytes = new TextEncoder().encode(text)
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary)
+}
+
+function decodeText(base64) {
+  const binary = atob(base64.replace(/\s/g, ''))
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0))
+  return new TextDecoder('utf-8').decode(bytes)
+}
+
 export async function getFileContent(filePath, token) {
   const res = await githubFetch(`/contents/${filePath}`, {}, token)
   const data = await res.json()
-  const content = atob(data.content.replace(/\n/g, ''))
   return {
-    content: JSON.parse(content),
+    content: JSON.parse(decodeText(data.content)),
     sha: data.sha
   }
 }
@@ -51,7 +70,7 @@ export async function getFileContent(filePath, token) {
 export async function writeFile(filePath, content, sha, message, token) {
   const body = {
     message,
-    content: btoa(JSON.stringify(content, null, 2))
+    content: encodeText(JSON.stringify(content, null, 2))
   }
   if (sha) {
     body.sha = sha
