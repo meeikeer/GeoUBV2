@@ -28,8 +28,8 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 ## Estructura (`client/src/`)
 - `services/`: `github.js` (fetch wrapper; constantes `REPO_OWNER`, `REPO_NAME`), `auth.js` (validación PAT, sesión), `crud.js` (CRUD sobre `geodata/*.json`)
 - `hooks/`: `useMapData.js` (cascada de carga), `useFloorManager.js`, `useMapLoader.js`, `useRouteManager.js`, `usePanZoom.js`, `useToast.js`
-- `lib/`: `assets.js` (rutas de assets y tamaños de PNG), `categorias.js` (catálogo de las 13), `framing.js` (matemática de encuadre), `mapDataShape.js` (normalización del bundle)
-- `components/map/` (TopBar, BottomToolbar, MapStage, etc.), `components/ui/` (Sheet), `components/icons/` (SVG)
+- `lib/`: `assets.js` (rutas de assets y tamaños de PNG), `categorias.js` (catálogo de las 13), `framing.js` (matemática de encuadre), `mapDataShape.js` (normalización del bundle), `previewChange.js` (entidades/ops y diff del preview admin)
+- `components/map/` (TopBar, BottomToolbar, MapStage, AdminPreviewDock, PreviewOverlay, etc.), `components/ui/` (Sheet, Dock), `components/icons/` (SVG)
 - `pages/`: `LandingPage.jsx`, `MapPage.jsx`
 - `workers/mapScanner.worker.js`
 - `App.jsx`, `App.css`, `main.jsx`, `index.css`
@@ -51,6 +51,12 @@ mismo shape, para que ninguna ruta dependa de cuál se leyó.
 - `mapdata.json` se genera **antes del deploy**, no en runtime.
 
 ## Escritura y refresco
+- Flujo admin en 2 pasos: el formulario **etapa** el cambio en memoria
+  (`stagedChange` en `MapPage`, un solo borrador) y se revisa en
+  `AdminPreviewDock` (no modal: vista Mapa con `PreviewOverlay` o vista JSON con
+  diff antes/después). Solo "Publicar" ejecuta el `crud.*` correspondiente y
+  refresca; "Descartar" (o logout / token caducado) borra el borrador. Cerrar
+  el dock solo lo minimiza: se reabre desde el botón "Preview" de `AdminToolbar`.
 - `crud.readCollection` es API pública: la usan `AdminPanel` (pestañas pisos,
   edificios, categorías) y `MapPage` (listado de ubicaciones).
 - Para el admin, `useMapData` lee **primero la API de GitHub** y usa
