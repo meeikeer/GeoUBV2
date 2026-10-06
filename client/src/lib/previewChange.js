@@ -1,9 +1,12 @@
 /* Utilidades puras del preview de cambios del modo admin.
 
    Un "cambio" es la unidad que se etapa antes de publicar:
-   { entity, op: 'create' | 'update' | 'delete', id, body, before }
+   { key, entity, op: 'create' | 'update' | 'delete', id, body, before }
+   - key: identidad local estable del cambio (uuid de sesión)
    - body:  registro a escribir (null en delete)
-   - before: registro actual tal y como se leyó (null en create) */
+   - before: registro actual tal y como se leyó (null en create)
+
+   La sesión de admin es la cola de cambios pendientes: [{...}, {...}]. */
 
 export const ENTITY_META = {
   sede: { label: 'Sede', noun: 'sede', nameField: 'nom_sede', idField: 'id_sede' },
@@ -83,4 +86,54 @@ export function diffRows(change) {
 
 export function formatValue(value) {
   return fmt(value)
+}
+
+/* ---------------- cola de cambios (sesión de admin) ---------------- */
+
+/** Identidad de un cambio sobre un registro existente (null en creates). */
+function identity(change) {
+  if (change.id == null) return null
+  return `${change.entity}:${change.id}`
+}
+
+/**
+ * Añade un cambio a la cola aplicando la regla de fusión de la sesión:
+ * - registro existente (id != null): reemplaza el cambio etapado anterior y
+ *   conserva su `before` original, de modo que el diff siempre sea contra el
+ *   repo y no contra un estado intermedio nunca publicado.
+ * - creates (id == null): siempre entran como entrada nueva.
+ * Devuelve una lista nueva (inmutable).
+ */
+export function stageInto(list, change) {
+  const id = identity(change)
+  if (id === null) return [...list, change]
+  const idx = list.findIndex(c => identity(c) === id)
+  if (idx === -1) return [...list, change]
+  const merged = { ...change, before: list[idx].before ?? change.before }
+  const next = [...list]
+  next[idx] = merged
+  return next
+}
+
+/** Recuento por operación para los chips de resumen del dock. */
+export function countByOp(changes) {
+  const counts = { create: 0, update: 0, delete: 0 }
+  for (const c of changes) {
+    if (counts[c.op] !== undefined) counts[c.op] += 1
+  }
+  return counts
+}
+
+/**
+ * Agrupa los cambios por fichero geodata que se reescribirá al publicar,
+ * en orden de primera aparición (un grupo = un commit).
+ */
+export function groupByFile(changes) {
+  const groups = new Map()
+  for (const change of changes) {
+    const file = targetFile(change.entity)
+    if (!groups.has(file)) groups.set(file, { file, entity: change.entity, changes: [] })
+    groups.get(file).changes.push(change)
+  }
+  return [...groups.values()]
 }
