@@ -5,10 +5,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
-  // GitHub Pages puede servir el build en un subpath (ej. /GeoUBV_v2/).
-  // Con base relativa, src/lib/assets.js resuelve los '/assets/...' contra el
-  // base real del deploy en lugar de dar 404.
-  base: './',
+  // El sitio vive siempre en la raiz del dominio (CNAME de GitHub Pages;
+  // meeikeer.github.io/GeoUBV2 redirige al dominio personalizado). Con base
+  // absoluta, el 404.html servido en rutas SPA como /mapa/ resuelve los assets
+  // contra '/' en vez de contra la ruta, que es lo que pasaba con base './'.
+  base: '/',
   plugins: [
     react(),
     tailwindcss(),

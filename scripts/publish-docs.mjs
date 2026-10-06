@@ -37,4 +37,13 @@ if (cname !== null) {
   fs.writeFileSync(cnamePath, cname)
 }
 fs.writeFileSync(path.join(DOCS, '.nojekyll'), '')
+
+/* GitHub Pages no hace fallback SPA: un GET a /mapa (recarga dura, enlace
+   compartido, primera visita sin service worker) buscaria un archivo que no
+   existe y devolveria el 404 generico. Pages sirve docs/404.html como pagina
+   de error personalizada con el contenido del shell: el navegador la renderiza
+   aunque el status sea 404 y React Router toma la ruta /mapa. Se copia el
+   index.html ya construido (con los hashes del build) en vez de un 404 estatico
+   en public/, porque los assets cambian en cada build. */
+fs.copyFileSync(path.join(DOCS, 'index.html'), path.join(DOCS, '404.html'))
 console.log('publish-docs: docs/ actualizado desde client/dist/')
