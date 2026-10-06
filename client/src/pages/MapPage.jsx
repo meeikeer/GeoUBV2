@@ -29,7 +29,22 @@ import OnboardingOverlay from '../components/map/OnboardingOverlay.jsx'
 import './MapPage.css'
 
 const ORIGIN_MEMORY_KEY = 'geoubv_last_origin'
+
+/* Zoom a partir del cual se muestran los nombres de todos los lugares. */
 const LABEL_ZOOM = 1.2
+
+/* Sobretamaño del marcador respecto a su tamaño nominal en pantalla.
+
+   Antes valia 1.2 y lo compartia con LABEL_ZOOM, que hacia dos trabajos a la
+   vez: decidir cuando aparecen las etiquetas y engordar el icono. Bajarlo para
+   encoger el icono habia delayed las etiquetas, asi que ahora son separados.
+
+   A 1 el icono mide en pantalla lo mismo que su tamaño nominal, que es lo que
+   hace que quepa dentro de una habitacion pequena cuando el plano se aleja:
+   las habitaciones si encogen con el zoom, los marcadores no. Con el 1.2 un
+   icono de 28 px se veia de 34 y en un movil de 375 px eran 31 px, mas que
+   algunas salas. */
+const MARKER_OVERSHOOT = 1
 
 export default function MapPage() {
   const navigate = useNavigate()
@@ -152,7 +167,7 @@ export default function MapPage() {
   }, [data.allLocations, currentPisoId])
 
   /* Los marcadores se compensan del zoom para mantener tamaño constante en
-     pantalla: scale = LABEL_ZOOM / zoom.
+     pantalla: scale = MARKER_OVERSHOOT / zoom.
 
      Antes llevaba Math.min(1, ...) y a partir de 1.2 de zoom dejaba de
      compensar, así que al alejar el marcador se encogía con la vista y a zoom
@@ -160,11 +175,10 @@ export default function MapPage() {
      siempre el mismo, tanto acercarse como alejar.
 
      El resultado se cuantiza en pasos: un valor continuo cambiaría en cada
-     evento de rueda y re-renderizaría la capa de marcadores entera. Con 8
-     escalones el tamaño en pantalla va de 1 a 1.4 y React solo reacciona al
-     cruzar de escalón.
+     evento de rueda y re-renderizaría la capa de marcadores entera. React solo
+     reacciona al cruzar de escalón.
 
-     El tope de 6 es seguridad: a un zoom muy pequeño 1.2/0.01 daría 120×. */
+     El tope de 6 es seguridad: a un zoom muy pequeño 1/0.01 daría 100×. */
 const MARKER_SCALE_CAP = 6
 const MARKER_SCALE_STEPS = 24
 
@@ -178,7 +192,7 @@ function quantizeScale(value, steps, max) {
 }
 
 const markerScale = quantizeScale(
-    LABEL_ZOOM / Math.max(zoom, 0.01),
+    MARKER_OVERSHOOT / Math.max(zoom, 0.01),
     MARKER_SCALE_STEPS,
     MARKER_SCALE_CAP
   )

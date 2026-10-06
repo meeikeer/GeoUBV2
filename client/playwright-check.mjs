@@ -111,17 +111,23 @@ console.log(`        ${zoom.steps} pasos de zoom, escala maxima ${zoom.max.toFix
 check('la ampliacion maxima no pasa de 3x', zoom.max <= 3.05,
   `${zoom.max.toFixed(2)}x (antes llegaba a 5.73x)`)
 
-console.log('\n=== 3. Iconos a distintos zooms ===\n')
+console.log('\n=== 3. Iconos y area de toque a distintos zooms ===\n')
 
+/* El icono (span.mask-icon) y el area de toque (button) se miden por separado,
+   y en pixeles CSS, no de dispositivo. Para la pregunta que importa, si el
+   icono es mas grande que la habitacion que señala, la unidad correcta son los
+   pixeles CSS: el plano tambien se mide en CSS, asi que la comparacion es
+   directa. Los pixeles de dispositivo solo dicen cuanto se refresca la retina. */
 const iconAt = () => page.evaluate(() => {
-  const btn = document.querySelector('.marker-pin')
-  const span = btn?.querySelector('span.mask-icon')
-  if (!span) return null
-  const r = span.getBoundingClientRect()
+  const pin = document.querySelector('.marker-pin')
+  const btn = pin?.closest('button')
+  const icon = pin?.querySelector('span.mask-icon')
+  if (!icon) return null
   const readout = [...document.querySelectorAll('span')].find(s => /^\d+%$/.test(s.textContent.trim()))
   return {
-    px: Math.round(r.width * window.devicePixelRatio),
-    filter: getComputedStyle(btn).filter,
+    icon: Math.round(icon.getBoundingClientRect().width),
+    hit: Math.round(btn.getBoundingClientRect().width),
+    filter: getComputedStyle(pin).filter,
     zoom: readout ? parseInt(readout.textContent, 10) : null
   }
 })
@@ -144,17 +150,69 @@ for (let i = 0; i < 20; i++) {
 await page.waitForTimeout(700)
 const near = await iconAt()
 
-console.log(`        cover=${atCover.zoom}% icono=${atCover.px}px | ` +
-  `lejos=${far.zoom}% icono=${far.px}px | cerca=${near.zoom}% icono=${near.px}px`)
+console.log(`        cover=${atCover.zoom}% icono=${atCover.icon}px toque=${atCover.hit}px | ` +
+  `lejos=${far.zoom}% icono=${far.icon}px toque=${far.hit}px | ` +
+  `cerca=${near.zoom}% icono=${near.icon}px toque=${near.hit}px`)
 
 check('el icono no tiene filter (causa del pixelado)', atCover.filter === 'none', atCover.filter)
-check('el icono se lee alejado', far.px >= 30, `${far.px}px reales a ${far.zoom}%`)
-check('el icono se lee cerca', near.px >= 30, `${near.px}px reales a ${near.zoom}%`)
-check('el tamaño se mantiene estable al zoom',
-  Math.max(atCover.px, far.px, near.px) / Math.min(atCover.px, far.px, near.px) < 1.6,
-  `rango ${Math.min(atCover.px, far.px, near.px)}-${Math.max(atCover.px, far.px, near.px)}px`)
+check('el icono se lee alejado', far.icon >= 12, `${far.icon}px CSS a ${far.zoom}%`)
+check('el icono se lee cerca', near.icon >= 12, `${near.icon}px CSS a ${near.zoom}%`)
+check('el icono no supera los 22px', Math.max(atCover.icon, far.icon, near.icon) <= 22,
+  `maximo ${Math.max(atCover.icon, far.icon, near.icon)}px CSS`)
+check('el area de toque llega a 44px aunque el icono sea pequeno',
+  Math.min(atCover.hit, far.hit, near.hit) >= 42,
+  `${Math.min(atCover.hit, far.hit, near.hit)}px`)
+check('el tamaño del icono se mantiene estable al zoom',
+  Math.max(atCover.icon, far.icon, near.icon) / Math.min(atCover.icon, far.icon, near.icon) < 1.6,
+  `rango ${Math.min(atCover.icon, far.icon, near.icon)}-${Math.max(atCover.icon, far.icon, near.icon)}px`)
 check('no hay aviso de lugares ocultos',
   !(await page.locator('text=lugares más al acercar').count()), 'decluttering eliminado')
+
+/* El area de toque de 44 px es mayor que el icono, asi que dos marcadores
+   cercanos pueden solaparse y uno robarle el toque al otro. Antes el icono
+   era el boton, asi que esto no podia pasar. Se comprueba que al pulsar cada
+   marcador se activa el suyo y no el de al lado. */
+console.log('\n=== 3a. Los marcadores siguen siendo pulsables ===\n')
+
+/* El test de zoom anterior deja el plano ampliado al maximo, con los marcadores
+   fuera del encuadre. Se vuelve al encuadre inicial antes de medir. */
+for (let i = 0; i < 20; i++) {
+  await page.click('[aria-label="Alejar"]')
+  await page.waitForTimeout(60)
+}
+await page.waitForTimeout(600)
+
+const onScreen = await page.evaluate(() => {
+  const w = innerWidth, h = innerHeight
+  return [...document.querySelectorAll('.marker-pin')]
+    .map((p, i) => ({ i, r: p.getBoundingClientRect() }))
+    .filter(({ r }) => r.left >= 0 && r.top >= 0 && r.right <= w && r.bottom <= h)
+    .map(({ i }) => i)
+})
+
+let selected = 0
+let wrong = 0
+for (const i of onScreen) {
+  await page.locator('.marker-pin').nth(i).click({ force: true })
+  await page.waitForTimeout(180)
+  const hit = await page.evaluate(() =>
+    [...document.querySelectorAll('.marker-pin')].findIndex(p => p.classList.contains('marker-active')))
+  if (hit === i) selected++
+  else wrong++
+}
+check('pulsar un marcador lo activa', onScreen.length > 0 && wrong === 0,
+  `${selected}/${onScreen.length} correctos` + (wrong ? `, ${wrong} activaron otro` : ''))
+check('solo queda uno activo a la vez',
+  (await page.locator('.marker-pin.marker-active').count()) <= 1, 'uno como maximo')
+
+/* Se devuelve el zoom al maximo. Al zoom minimo el plano no tiene margen de
+   desplazamiento y el arrastre de 3b no tendria nada que mover: el limite de
+   pan lo deixa donde esta. */
+for (let i = 0; i < 20; i++) {
+  await page.click('[aria-label="Acercar"]')
+  await page.waitForTimeout(60)
+}
+await page.waitForTimeout(600)
 
 console.log('\n=== 3b. Arrastre con raton ===\n')
 

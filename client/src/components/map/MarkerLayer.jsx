@@ -41,6 +41,11 @@ export default function MarkerLayer({
             {/* La escala va en un envoltorio: el button lleva rotate-45 de
                 Tailwind y un transform inline lo pisaria. */}
             <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+              {/* El boton mide 44 px y es area de toque; el rombo de dentro es
+                  el icono. Separarlos permite achicar el icono hasta que quepa
+                  dentro de una habitacion pequena sin dejar de ser tocable: en
+                  un movil de 375 px el icono son 22 px, que por si solo estaria
+                  muy por debajo del minimo recomendado de 44 px. */}
               <button
                 type="button"
                 aria-label={`${item.name}${item.floor ? `, ${item.floor}` : ''}${categoria?.nom_categoria ? `, ${categoria.nom_categoria}` : ''}`}
@@ -49,11 +54,15 @@ export default function MarkerLayer({
                   e.stopPropagation()
                   onSelect(isActive ? null : item)
                 }}
-                className={`marker-pin chamfer-sm grid h-[clamp(26px,3.4vw,40px)] w-[clamp(26px,3.4vw,40px)] rotate-45 place-items-center text-brand-300 no-tap-highlight ${
-                  isActive ? 'marker-active' : ''
-                } ${isSelected ? 'marker-selected' : ''}`}
+                className="grid h-11 w-11 place-items-center no-tap-highlight"
               >
-                <AssetIcon name={icon.name} src={icon.src} className="h-[62%] w-[62%] -rotate-45" />
+                <span
+                  className={`marker-pin chamfer-sm grid h-[clamp(22px,2.4vw,28px)] w-[clamp(22px,2.4vw,28px)] rotate-45 place-items-center text-brand-300 ${
+                    isActive ? 'marker-active' : ''
+                  } ${isSelected ? 'marker-selected' : ''}`}
+                >
+                  <AssetIcon name={icon.name} src={icon.src} className="h-[62%] w-[62%] -rotate-45" />
+                </span>
               </button>
 
               {(showAllLabels || isActive) && <span className="marker-label">{item.name}</span>}
