@@ -41,7 +41,7 @@
   },
   {
     "id_habitacion": 5,
-    "nom_codigo": "Baño Hombres",
+    "nom_codigo": "BaÃ±o Hombres",
     "coord_x": 0.5795833814074618,
     "coord_y": 0.41678224687933424,
     "id_piso_fk": 2,
@@ -61,7 +61,7 @@
   },
   {
     "id_habitacion": 7,
-    "nom_codigo": "Baño Mujeres",
+    "nom_codigo": "BaÃ±o Mujeres",
     "coord_x": 0.41017043343992743,
     "coord_y": 0.4128195238012024,
     "id_piso_fk": 2,
