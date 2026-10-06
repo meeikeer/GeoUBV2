@@ -389,36 +389,42 @@ select.field option {
 
 /* ============================================================
    Marcadores de mapa — rombo chaflanado (lenguaje señalización)
-   ============================================================ */
+
+   Sin filter, sin box-shadow y sin degradado. El degradado es lo único que
+   queda de los efectos anteriores: un filter obligaba al navegador a rasterizar
+   el subárbol en una textura propia y, con el rotate-45 y el scale() anidado,
+   elegía resolución baja (los iconos salían como bloques de 4×4 px). El borde
+   claro interior basta para separar del plano blanco y no lo recorta el
+   clip-path del chaflán. */
 .marker-pin {
   display: grid;
   place-items: center;
-  background-image: linear-gradient(150deg, var(--color-ink-700), var(--color-ink-850));
+  background-color: var(--color-ink-800);
   border: 1px solid rgba(255, 255, 255, 0.42);
   transition:
-    border-color 0.2s ease,
-    background-image 0.2s ease,
-    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
-
-/* El marcador no lleva filter a propósito. Un filtro obliga al navegador a
-   rasterizar el subárbol entero en una textura propia y, combinado con el
-   rotate-45 y el scale() anidado, elegía una resolución baja: los iconos salían
-   como bloques de 4×4 px al acercar. La separación sobre el plano blanco la da
-   un borde claro interior, que el clip-path del chaflán no recorta. */
 
 .marker-active {
   border-color: var(--color-brand-400);
-  background-image: linear-gradient(150deg, #3a3020, #1c1a14);
+  background-color: #2a2418;
 }
 
 /* Marcador que es el destino de la ruta activa */
 .marker-selected {
   border-color: var(--color-signal-400);
-  background-image: linear-gradient(150deg, #16332f, #10201f);
+  background-color: #14302c;
 }
 
-/* Etiqueta flotante del marcador */
+/* Etiqueta flotante del marcador.
+
+   Sin box-shadow y sin transicion: la etiqueta vive dentro de un contenedor con
+   transform: scale(), y una sombra difusa sobre texto escalado obliga a
+   rasterizar de nuevo. Medido en PC al cruzar el umbral de zoom (donde aparecen
+   todas las etiquetas de golpe): con box-shadow el zoom bajaba a 24 fps con
+   28,8% de frames largos; sin el, 76 fps sin frames largos. El contraste lo
+   hace el fondo opaco contra el plano blanco. */
 .marker-label {
   position: absolute;
   top: calc(100% + 10px);
@@ -428,10 +434,11 @@ select.field option {
   padding: 0.25rem 0.5rem;
   font-size: 0.6875rem;
   font-weight: 600;
+  line-height: 1.3;
   color: #f1f5f9;
-  background-color: rgba(8, 9, 13, 0.94);
-  border: 1px solid var(--line-strong);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  background-color: #08090d;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  contain: paint;
 }
 
 /* ============================================================
