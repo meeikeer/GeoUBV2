@@ -4,7 +4,7 @@
   "description": "GeoUBV - Mapa Universitario Interactivo (Solo Frontend + GitHub API)",
   "private": true,
   "scripts": {
-    "dev": "npm run dev --prefix client",
+    "dev": "npm run dev --prefix client -- --host",
     "build": "npm run build --prefix client && node scripts/publish-docs.mjs",
     "build:only": "npm run build --prefix client",
     "preview": "npm run preview --prefix client",
