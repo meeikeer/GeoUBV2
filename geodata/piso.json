@@ -14,7 +14,8 @@
     "display": "1",
     "nom_piso": "Piso 1",
     "url_map": "/assets/maps/mapa-piso1.png",
-    "id_edificio_fk": 1
+    "id_edificio_fk": 1,
+    "url_mapa_logico": "/assets/maps/mapa-piso1-logico-1791663494349.png"
   },
   {
     "id_piso": 3,
