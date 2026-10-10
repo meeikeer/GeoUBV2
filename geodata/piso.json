@@ -26,5 +26,13 @@
     "url_map": "/assets/maps/mapa-piso2.png",
     "id_edificio_fk": 1,
     "url_mapa_logico": "/assets/maps/mapa-piso2-logico-1791663507213.png"
+  },
+  {
+    "id_piso": 4,
+    "num_piso": 3,
+    "display": "3",
+    "nom_piso": "Piso 3",
+    "url_map": "/assests/map/piso",
+    "id_edificio_fk": 1
   }
 ]
