@@ -5,7 +5,8 @@
     "display": "S",
     "nom_piso": "Sótano",
     "url_map": "/assets/maps/mapa-sotano.png",
-    "id_edificio_fk": 1
+    "id_edificio_fk": 1,
+    "url_mapa_logico": "/assets/maps/mapa-piso-1-logico-1791663480973.png"
   },
   {
     "id_piso": 2,
