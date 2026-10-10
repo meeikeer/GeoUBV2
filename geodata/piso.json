@@ -23,6 +23,7 @@
     "display": "2",
     "nom_piso": "Piso 2",
     "url_map": "/assets/maps/mapa-piso2.png",
-    "id_edificio_fk": 1
+    "id_edificio_fk": 1,
+    "url_mapa_logico": "/assets/maps/mapa-piso2-logico-1791663507213.png"
   }
 ]
